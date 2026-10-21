@@ -1,0 +1,152 @@
+/* Shared supplier purchase cost / tracking — Orders drawer ↔ Fulfil hover */
+
+.supplier-purchase-section {
+  min-width: 0;
+}
+
+.supplier-purchase-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.supplier-purchase-section-title {
+  font-size: 12px !important;
+  line-height: 1.3;
+  color: var(--order-text, var(--fulfil-text, rgba(0, 0, 0, 0.88)));
+}
+
+.supplier-purchase-section-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.supplier-purchase-multi-tag.ant-tag {
+  margin: 0;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 6px;
+}
+
+.supplier-purchase-multi-note {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--fulfil-text-tertiary, var(--order-text-tertiary, rgba(0, 0, 0, 0.45)));
+  margin: 6px 0 4px;
+}
+
+.supplier-purchase-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.supplier-purchase-link {
+  padding-top: 8px;
+  border-top: 1px dashed var(--fulfil-border, var(--order-border, #f0f0f0));
+}
+
+.supplier-purchase-link-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.supplier-purchase-link-no {
+  font-size: 12px;
+  font-weight: 600;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.supplier-purchase-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  min-width: 0;
+}
+
+.supplier-purchase-track-carrier.ant-tag {
+  margin: 0;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+.supplier-purchase-track-no {
+  font-size: 12px !important;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.supplier-purchase-track-no:hover {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+.supplier-purchase-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 0;
+}
+
+.supplier-purchase-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.supplier-purchase-field-label {
+  font-size: 12px;
+  color: var(--fulfil-text-tertiary, var(--order-text-tertiary, rgba(0, 0, 0, 0.45)));
+  flex-shrink: 0;
+}
+
+.supplier-purchase-field-value,
+.supplier-purchase-field-strong {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fulfil-text, var(--order-text, rgba(0, 0, 0, 0.88)));
+  white-space: nowrap;
+  text-align: right;
+}
+
+.supplier-purchase-field-strong {
+  font-weight: 600;
+}
+
+.supplier-purchase-discount {
+  color: #c44a01;
+}
+
+.supplier-purchase-struck {
+  text-decoration: line-through;
+}
+
+.supplier-purchase-cost {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--order-cost, var(--fulfil-amount-debit, #873c00));
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.supplier-purchase-sell {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--order-money, var(--fulfil-amount-credit, #389e0d));
+  white-space: nowrap;
+  font-weight: 600;
+}

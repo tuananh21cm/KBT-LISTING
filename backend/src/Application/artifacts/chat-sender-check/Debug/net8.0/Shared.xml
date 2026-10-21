@@ -1,0 +1,3019 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Shared</name>
+    </assembly>
+    <members>
+        <member name="T:Shared.Constants.AfterSalesSyncSettingKeys">
+             <summary>
+             Setting keys for the 4Seller after-sales (return / refund) sync — managed via admin Settings.
+            
+             Two independent loops, because they are two different systems doing the work:
+             <c>trigger</c> asks 4Seller to pull fresh return cases from TikTok Shop into its own database,
+             <c>pull</c> reads those cases back into ours. Running them on separate clocks lets the pull stay
+             cheap while the trigger, which costs a TikTok round-trip on 4Seller's side, runs rarely.
+            
+             This flow owns <c>Order.PlatformOrderStatus = REFUND</c>, <c>Order.RefundedAt</c> and
+             <c>Order.CancelReason</c>. Order sync only latches what this flow wrote.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.TriggerEnabled">
+            <summary>When true, the API server periodically asks 4Seller to pull returns from TikTok Shop.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.TriggerIntervalMinutes">
+            <summary>Minutes between trigger calls. Clamped to <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.MaxIntervalMinutes"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.PullEnabled">
+            <summary>When true, the API server periodically pulls return cases from 4Seller into local orders.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.PullIntervalMinutes">
+            <summary>Minutes between pull runs. Clamped to <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.MaxIntervalMinutes"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.NotifyEnabled">
+            <summary>When true, orders whose after-sales state changed this run are announced on Telegram.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.TelegramChatId">
+            <summary>Telegram chat that receives after-sales handling messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.Watermark">
+            <summary>
+            Internal cursor, not meant for hand editing: JSON map <c>ownerId → last platformUpdateTime
+            (UTC, round-trip format)</c> already processed. Per-owner so one seller failing (expired
+            cookie, proxy cooldown) cannot skip its returns by riding a shared cursor other sellers moved.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundedAtCreateTimeRepair">
+             <summary>
+             One-shot marker (<c>done</c>) for the pass that re-stamps <c>Order.RefundedAt</c> from the
+             return case's <c>platformCreateTime</c>. Earlier runs stamped <c>platformUpdateTime</c>,
+             which moves every time the platform touches the case, so the refund clock drifted forward
+             and the refund list sorted nothing like TikTok Shop / 4Seller.
+            
+             Not seeded as a user-facing switch: clear the value to run the pass again.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.OrphanRefundReconcile">
+            <summary>
+            One-shot marker (<c>done</c>) for the pass that released orders from <c>REFUND</c> when their
+            return case was still open. Superseded by <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundCasePresenceReconcile"/>, which
+            reverses that rule — kept only so the settled row is recognisable in Settings.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundCasePresenceReconcile">
+             <summary>
+             One-shot marker (<c>done</c>) for the full reconcile that makes local <c>REFUND</c> mirror
+             4Seller's returns list: an order with a case (complete or still running) belongs in the
+             refund tab with its clock set to the case's create time, and an order no case mentions at all
+             does not belong there.
+            
+             Not seeded as a user-facing switch: clear the value to run the pass again.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.ReturnStatusBackfill">
+             <summary>
+             One-shot marker (<c>done</c>) for the pass that backfills <c>Order.ReturnStatus</c> from
+             4Seller <c>returnStatus</c> onto every refunded order. Pull incremental only re-reads cases
+             that changed since the watermark, so without this pass OrderCards would keep a blank status
+             line until each case next moves on 4Seller.
+            
+             Separate from <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundCasePresenceReconcile"/> (already <c>done</c>) so that pass is
+             not re-run; clear the value to run again.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.DefaultTelegramChatId">
+            <summary>Default chat for after-sales messages (same ops group as cancel/refund).</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.DefaultTriggerIntervalMinutes">
+            <summary>Default minutes between trigger calls.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.DefaultPullIntervalMinutes">
+            <summary>Default minutes between pull runs.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.MinIntervalMinutes">
+            <summary>Minimum interval for both loops.</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.MaxIntervalMinutes">
+            <summary>Maximum interval for both loops (24 hours).</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.PageSize">
+            <summary>Return rows fetched per page (4Seller caps this at 100).</summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.MaxPagesPerOwner">
+            <summary>
+            Pages a single owner may read in one pull. A return case that stays open for months keeps
+            bubbling up on <c>platformUpdateTime</c>, so an owner with a stale watermark must not be able
+            to walk the entire history in one pass and stall every other owner behind the gate.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.AfterSalesSyncSettingKeys.RepairMaxPagesPerOwner">
+            <summary>
+            Page cap for the one-shot full-reconcile passes (<see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.ReturnStatusBackfill"/>,
+            <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundCasePresenceReconcile"/> and the settled
+            <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.RefundedAtCreateTimeRepair"/> / <see cref="F:Shared.Constants.AfterSalesSyncSettingKeys.OrphanRefundReconcile"/>).
+            They have no watermark to stop at — the whole point is reaching every case an incremental pull
+            already walked past — so the cap is only a runaway guard, not a budget.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ClaimConstants">
+            <summary>
+            JWT and claim constants.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ClaimConstants.Permission">
+            <summary>
+            Permission claim type.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ClaimConstants.UserId">
+            <summary>
+            User identifier claim type.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ClaimConstants.SecurityStamp">
+            <summary>
+            ASP.NET Identity security stamp — invalidated on password change / account revoke.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.RoleNames">
+            <summary>
+            Default role names stored in database.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.Admin">
+            <summary>Administrator role.</summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.Manager">
+            <summary>Manager role.</summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.Leader">
+            <summary>Leader role.</summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.Seller">
+            <summary>Seller role.</summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.Fulfil">
+            <summary>Fulfil role — purchase / đi đơn (extension KINHBAC FULFIL).</summary>
+        </member>
+        <member name="F:Shared.Constants.RoleNames.All">
+            <summary>All default roles.</summary>
+        </member>
+        <member name="T:Shared.Constants.ApplicationNames">
+            <summary>
+            Application identifiers for permission scoping.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ApplicationNames.SellerWeb">
+            <summary>Seller web application.</summary>
+        </member>
+        <member name="F:Shared.Constants.ApplicationNames.AdminWeb">
+            <summary>Admin web application.</summary>
+        </member>
+        <member name="T:Shared.Constants.BunnySettingKeys">
+            <summary>
+            Setting keys for Bunny CDN configuration (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.BunnySettingKeys.AccessKey">
+            <summary>Bunny storage zone access key.</summary>
+        </member>
+        <member name="F:Shared.Constants.BunnySettingKeys.StorageZone">
+            <summary>Storage zone name.</summary>
+        </member>
+        <member name="F:Shared.Constants.BunnySettingKeys.StorageHostname">
+            <summary>Storage API hostname (e.g. sg.storage.bunnycdn.com).</summary>
+        </member>
+        <member name="F:Shared.Constants.BunnySettingKeys.CdnHostname">
+            <summary>CDN pull zone hostname or base URL (e.g. xxx.b-cdn.net).</summary>
+        </member>
+        <member name="F:Shared.Constants.BunnySettingKeys.MaxFileSizeMb">
+            <summary>Max upload file size in megabytes.</summary>
+        </member>
+        <member name="T:Shared.Constants.DataRetentionSettingKeys">
+             <summary>
+             Số ngày giữ các bảng chỉ-ghi-thêm mà không có ai xoá: nhật ký sync, snapshot phân tích, refresh
+             token đã hết vòng đời. Không bảng nào ở đây là dữ liệu nghiệp vụ — sổ cái, listing, SKU, lần mua
+             NCC đều không có retention.
+            
+             Đặt <c>0</c> cho một key nào là tắt việc dọn bảng đó.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.Group">
+            <summary>Nhóm cấu hình trong trang Settings.</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.AnalyticsSnapshotDays">
+            <summary>Snapshot TikTok Compass theo ngày (<c>ListingAnalyticsSnapshots</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.TikTokSyncLogDays">
+            <summary>Nhật ký sync extension TikTok Shop (<c>TikTokShopSyncLogs</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.RefreshTokenDays">
+            <summary>Refresh token đã revoke hoặc đã hết hạn (<c>RefreshTokens</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.ShopOnlineSessionDays">
+            <summary>Lịch sử phiên online extension (<c>ShopOnlineSessions</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.DefaultAnalyticsSnapshotDays">
+            <summary>UI chỉ vẽ 90 ngày gần nhất, nên giữ đúng chừng đó.</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.DefaultTikTokSyncLogDays">
+            <summary>Nhật ký sync chỉ dùng để chẩn đoán một lượt vừa chạy.</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.DefaultRefreshTokenDays">
+            <summary>Token đã revoke chỉ còn giá trị điều tra phiên đăng nhập gần nhất.</summary>
+        </member>
+        <member name="F:Shared.Constants.DataRetentionSettingKeys.DefaultShopOnlineSessionDays">
+            <summary>Giữ khoảng 3 tháng phút online để thống kê.</summary>
+        </member>
+        <member name="M:Shared.Constants.DataRetentionSettingKeys.ResolveDays(System.String,System.String)">
+            <summary>Đọc số ngày, trả <c>null</c> khi tắt hoặc giá trị không hợp lệ.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopPlatforms">
+            <summary>
+            E-commerce platform identifiers.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopPlatforms.TikTokShopUs">
+            <summary>TikTok Shop US.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopStatuses">
+            <summary>
+            Shop status values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTypes">
+            <summary>
+            Shop ownership type (Per = cá nhân, Llc = công ty).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTypes.Per">
+            <summary>Personal / sole-proprietor shop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTypes.Llc">
+            <summary>LLC / company shop.</summary>
+        </member>
+        <member name="T:Shared.Constants.ProductStatuses">
+            <summary>
+            Product status values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingStatuses">
+            <summary>
+            Shop product listing status values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingPageTypes">
+            <summary>
+            Synced listing page buckets (admin Listings mirror).
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAddedFrom">
+            <summary>
+            Local-only origin of a listing add (extension Search vs PDP thủ công).
+            Null on the listing = unknown / legacy (không đoán «thêm tay»).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAddedFrom.Recommended">
+            <summary>Added from extension Search results (bulk or click-then-add).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAddedFrom.Manual">
+            <summary>Added from a source PDP that was not in the Search list.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAddedFrom.All">
+            <summary>Known origin values.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSiteStatuses">
+            <summary>
+            4Seller listing site statuses used for page sync / Published tabs.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSiteStatuses.DefaultSyncStatuses">
+            <summary>Statuses pulled when syncing without an explicit filter.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSiteStatuses.PublishedStatuses">
+            <summary>Published-tab site statuses (excludes draft).</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSiteStatuses.ToFourSellerPageStatus(System.String)">
+            <summary>
+            Maps local/UI site status → 4Seller <c>/api/listing/{platform}/page</c> <c>status</c> query.
+            4Seller uses <c>remove</c> (not <c>removed</c>).
+            </summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSiteStatuses.NormalizeSiteStatus(System.String)">
+            <summary>
+            Normalizes 4Seller erp / page status strings to local <see cref="T:Shared.Constants.ListingSiteStatuses"/> values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.FourSellerProductStatuses">
+            <summary>
+            TikTok <c>productStatus</c> numeric codes from 4Seller listing page rows.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerProductStatuses.Reviewing">
+            <summary>Posted to shop, waiting TikTok review (UI: Pending / Reviewing).</summary>
+        </member>
+        <member name="T:Shared.Constants.PublishStatuses">
+            <summary>
+            4Seller publish status values (detailed).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.PublishStatuses.Publishing">
+            <summary>4Seller in-flight publish/update (<c>publishStatus=publishing</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.PublishStatuses.InFlightLowercase">
+            <summary>
+            Lowercase in-flight values for EF Core <c>Contains(status.ToLower())</c>.
+            Do not call <see cref="M:Shared.Constants.PublishStatuses.IsInFlight(System.String)"/> inside <c>IQueryable</c> — EF cannot translate it.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.PublishStatuses.FailedLowercase">
+            <summary>Lowercase failed publish — exclude from auto-publish pick (EF Contains).</summary>
+        </member>
+        <member name="M:Shared.Constants.PublishStatuses.Normalize(System.String)">
+            <summary>Maps 4Seller publish status strings to canonical <see cref="T:Shared.Constants.PublishStatuses"/> values.</summary>
+        </member>
+        <member name="M:Shared.Constants.PublishStatuses.BlocksAutoPublishPick(System.String)">
+            <summary>
+            Whether <paramref name="publishStatus"/> blocks auto-publish pick (in-flight or Failed).
+            </summary>
+        </member>
+        <member name="M:Shared.Constants.PublishStatuses.IsInFlight(System.String)">
+            <summary>Whether the listing is awaiting TikTok after a publish/update push.</summary>
+        </member>
+        <member name="T:Shared.Constants.SyncStatuses">
+            <summary>
+            Internal listing sync status values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingMediaTypes">
+            <summary>
+            Listing media type values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingCertTypes">
+            <summary>
+            Listing certification type values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingProductTypes">
+            <summary>
+            TikTok listing product type values.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.FileLinkedEntityTypes">
+            <summary>
+            Linked entity types for user files.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ScrapeBatchStatuses">
+            <summary>
+            Scrape batch status values.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ScrapeBatchStatuses.Retrying">
+            <summary>Pending after one mid-poll re-submit to 4Seller.</summary>
+        </member>
+        <member name="T:Shared.Constants.ExtensionSheinSyncSettingKeys">
+            <summary>
+            Setting keys for the fulfil-extension SHEIN auto-sync (managed via admin Settings).
+            Controls the "Sync Order" auto-run interval (extension chrome.alarms — runs with panel closed).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.Enabled">
+            <summary>When true, the extension auto-syncs SHEIN orders on the configured interval (background alarms).</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.IntervalValue">
+            <summary>Interval magnitude (paired with <see cref="F:Shared.Constants.ExtensionSheinSyncSettingKeys.IntervalUnit"/>). Minimum 1.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.IntervalUnit">
+            <summary>Interval unit: <c>seconds</c> or <c>minutes</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.HeaderSource">
+            <summary>
+            Nguồn đồng bộ SHEIN (legacy): luôn <see cref="F:Shared.Constants.ExtensionSheinSyncSettingKeys.HeaderSourceRealtime"/>.
+            Settings UI no longer exposes Local.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UpdateMode">
+            <summary>
+            Update mode: <see cref="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UpdateModeNew"/> (pool fulfil) hoặc <see cref="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UpdateModeAll"/>
+            (mọi đơn không huỷ trong cửa sổ Lookback — cập nhật chính xác, không xóa link hàng loạt).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.ConcurrentThreads">
+            <summary>
+            Số luồng song song khi gọi SHEIN get_order_info (phase detail). Clamp 1–20.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.RefreshLookbackDays">
+            <summary>
+            Cửa sổ ngày theo <c>orderedAt</c> khi phân trang <c>order/list</c>
+            (dừng sớm khi trang toàn đơn ngoài cửa sổ). Không dùng để build open-set từ DB.
+            Clamp 1–60, mặc định 14.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.RefreshMaxBillnos">
+            <summary>
+            Giữ tương thích Settings. Không còn dùng để cap open-set refresh từ DB.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.CaptureRawPayload">
+            <summary>
+            Khi bật, extension đính kèm JSON gốc SHEIN (list item + get_order_info) vào payload sync
+            và backend lưu vào <c>OrderSupplierLinks.RawPayload</c>. Mọi field khác đều là kết quả
+            suy diễn — không có bản gốc thì không kiểm chứng được tên field hay múi giờ. Tốn băng
+            thông nên chỉ bật khi đang chẩn đoán.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.ForceBillnos">
+            <summary>
+            Danh sách billno (phân tách bởi dấu phẩy) ép lấy lại chi tiết ngoài list SHEIN lần này.
+            Chỉ dùng chẩn đoán. Để trống khi vận hành thường.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MaxForceBillnos">
+            <summary>Trần số billno ép lấy lại, chặn việc dán nhầm cả nghìn mã vào ô setting.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.DefaultConcurrentThreads">
+            <summary>Default concurrent detail fetches when setting missing/invalid.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MinConcurrentThreads">
+            <summary>Minimum concurrent detail fetches.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MaxConcurrentThreads">
+            <summary>Maximum concurrent detail fetches.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.DefaultRefreshLookbackDays">
+            <summary>Default list lookback days (mode <c>new</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MinRefreshLookbackDays">
+            <summary>Minimum lookback days.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MaxRefreshLookbackDays">
+            <summary>Maximum lookback days.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.DefaultRefreshMaxBillnos">
+            <summary>Default cap of refresh billnos returned per config fetch.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MinRefreshMaxBillnos">
+            <summary>Minimum refresh billno cap.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.MaxRefreshMaxBillnos">
+            <summary>
+            Hard ceiling for the refresh billno cap. Phase detail chạy 10 request/lô nên đặt quá cao
+            sẽ kéo dài một lượt sync và dễ ăn Cloudflare 524.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UnitSeconds">
+            <summary>Interval unit value: seconds.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UnitMinutes">
+            <summary>Interval unit value: minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UpdateModeNew">
+            <summary>List SHEIN trong lookback — match đơn mới (phone+zip); cập nhật đơn đã có billno.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.UpdateModeAll">
+            <summary>List SHEIN sâu hơn — rematch wipe links trong batch; detail chỉ khi thiếu cost/carrier/milestone.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.HeaderSourceLocal">
+            <summary>
+            Backend gọi SHEIN bằng cookie + header đã lưu trên tài khoản fulfil (qua proxy).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.HeaderSourceRealtime">
+            <summary>Extension gọi SHEIN trên trình duyệt (hành vi mặc định).</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionSheinSyncSettingKeys.HeaderSourceRenamedMarker">
+            <summary>
+            Marker: đã flip nghĩa <c>local</c>/<c>realtime</c> một lần (v1).
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys">
+            <summary>
+            Setting keys for tiktok-shop-extension Product opportunities (trending keywords) auto-sync
+            (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.Enabled">
+            <summary>When true, the extension auto-scrapes seller-us lead/list on the configured interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.IntervalValue">
+            <summary>Interval magnitude (paired with <see cref="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.IntervalUnit"/>). Minimum 1.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.IntervalUnit">
+            <summary>Interval unit: <c>seconds</c> or <c>minutes</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.UnitSeconds">
+            <summary>Interval unit value: seconds.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.UnitMinutes">
+            <summary>Interval unit value: minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokOpportunitySyncSettingKeys.DefaultIntervalValue">
+            <summary>Default interval magnitude when setting missing/invalid.</summary>
+        </member>
+        <member name="T:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys">
+            <summary>
+            Setting keys for the tiktok-shop-extension payout (paid) auto-sync + Telegram alerts
+            (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.Enabled">
+            <summary>When true, the extension auto-scrapes seller-us payouts on the configured interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.IntervalValue">
+            <summary>Interval magnitude (paired with <see cref="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.IntervalUnit"/>). Minimum 1.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.IntervalUnit">
+            <summary>Interval unit: <c>seconds</c> or <c>minutes</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.MaxDate">
+            <summary>
+            ISO date (yyyy-MM-dd) — do not fetch/sync payouts with success time older than this date (UTC midnight).
+            Empty = no floor other than DB cursor.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.NotifyNewPayment">
+            <summary>When true, Telegram when a new TikTok payout is inserted.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.TelegramChatId">
+            <summary>Telegram chat / group id for new payout alerts.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.UnitSeconds">
+            <summary>Interval unit value: seconds.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.UnitMinutes">
+            <summary>Interval unit value: minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.DefaultIntervalValue">
+            <summary>Default interval magnitude when setting missing/invalid.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokPayoutSyncSettingKeys.DefaultTelegramChatId">
+            <summary>Default Telegram chat id for payout alerts.</summary>
+        </member>
+        <member name="T:Shared.Constants.ExtensionTikTokShopSyncSettingKeys">
+            <summary>
+            Setting keys for the tiktok-shop-extension auto-sync + Telegram profile-change alerts
+            (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.Enabled">
+            <summary>When true, the extension auto-scrapes seller-us on the configured interval (chrome.alarms).</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.IntervalValue">
+            <summary>Interval magnitude (paired with <see cref="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.IntervalUnit"/>). Minimum 1.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.IntervalUnit">
+            <summary>Interval unit: <c>seconds</c> or <c>minutes</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.NotifyEmailChange">
+            <summary>When true, Telegram when synced email differs from previously stored email.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.NotifyMobileChange">
+            <summary>When true, Telegram when synced mobile differs from previously stored mobile.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.NotifyBankChange">
+            <summary>When true, Telegram when synced settlement bank differs from previously stored bank.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.NotifyBankLast4Mismatch">
+            <summary>
+            When true, Telegram when settlement bank last-4 digits do not match any
+            <c>ReceivingBankAccounts.AccountNumber</c> last-4.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.NotifyStatusChange">
+            <summary>
+            When true, Telegram when the ops <c>Shop.Status</c> changes (Active / Deactivated / Suspended),
+            whether from a TTS sync or a manual admin/seller edit.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.TelegramChatId">
+            <summary>Telegram chat / group id for TikTok shop profile alerts.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.UnitSeconds">
+            <summary>Interval unit value: seconds.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.UnitMinutes">
+            <summary>Interval unit value: minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.DefaultIntervalValue">
+            <summary>Default interval magnitude when setting missing/invalid.</summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokShopSyncSettingKeys.DefaultTelegramChatId">
+            <summary>Default Telegram chat id for profile alerts.</summary>
+        </member>
+        <member name="T:Shared.Constants.ExtensionTikTokUnifiedSyncSettingKeys">
+            <summary>
+            Setting keys for which Sync All / Sync Fast steps the tiktok-shop-extension may run
+            (managed via admin Settings — separate from Auto Sync <c>extension.tiktok_*_sync.enabled</c>).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ExtensionTikTokUnifiedSyncSettingKeys.DefaultStepEnabled">
+            <summary>Default when setting row missing — keep Sync All fully on.</summary>
+        </member>
+        <member name="T:Shared.Constants.FourSellerConnectionStatuses">
+            <summary>
+            4Seller shop connection status values.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerConnectionStatuses.Connected">
+            <summary>Shop has a 4Seller shop ID.</summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerConnectionStatuses.NotConnected">
+            <summary>Shop is not linked to 4Seller.</summary>
+        </member>
+        <member name="T:Shared.Constants.FourSellerCookieLoginStatuses">
+            <summary>
+            Persisted 4Seller session login status on <c>ApplicationUser</c>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerCookieLoginStatuses.None">
+            <summary>No cookie stored.</summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerCookieLoginStatuses.Unchecked">
+            <summary>Cookie stored but not verified via is-login yet.</summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerCookieLoginStatuses.LoggedIn">
+            <summary>Last check confirmed an active 4Seller session.</summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerCookieLoginStatuses.Expired">
+            <summary>Last check (or outbound probe) found the session invalid/expired.</summary>
+        </member>
+        <member name="T:Shared.Constants.FourSellerProxySettingKeys">
+            <summary>
+            Setting keys for the 4Seller egress proxy pool (managed via admin Settings).
+            Per-seller proxy lives on <c>ApplicationUser.FourSellerProxy</c>; these settings
+            control the shared failover pool and the master enable toggle.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerProxySettingKeys.Enabled">
+            <summary>
+            When true, sellers without a personal proxy may use the shared failover pool.
+            Per-seller <c>ApplicationUser.FourSellerProxy</c> is always used when set (toggle does not gate it).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerProxySettingKeys.Pool">
+            <summary>
+            Shared failover proxy pool. One proxy per line (or comma-separated).
+            Formats: <c>ip:port</c>, <c>ip:port:user:pass</c>, or <c>[scheme://][user:pass@]host:port</c>
+            (scheme optional, defaults to http CONNECT; prefix <c>https://</c> for HTTPS proxy; <c>socks5://</c> for SOCKS5).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerProxySettingKeys.CooldownMinutes">
+            <summary>Minutes a proxy stays in cooldown after a 4Seller block (567) before it is retried. Minimum 1.</summary>
+        </member>
+        <member name="T:Shared.Constants.FourSellerSessionSettingKeys">
+            <summary>
+            Setting keys for 4Seller session validation (is-login probe cache).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerSessionSettingKeys.ValidateTtlMinutes">
+            <summary>
+            Minutes a successful is-login result is reused before probing again.
+            Default 15; minimum 1. Reduces burst traffic from parallel DI scopes.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FourSellerSessionSettingKeys.DefaultValidateTtlMinutes">
+            <summary>Default TTL when the setting is missing or invalid.</summary>
+        </member>
+        <member name="T:Shared.Constants.FulfilClaimSettingKeys">
+            <summary>
+            Settings keys for fulfil order claim / lease (extension multi-operator queue).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.TtlMinutes">
+            <summary>Lease TTL in minutes (default 15, clamp 3–60).</summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.MaxPerUser">
+            <summary>
+            Max distinct orders one fulfil user may hold at once (default 10).
+            Counts orders (leases), not sessions — 3 Chrome profiles on 1 order = 1 slot.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.DefaultTtlMinutes">
+            <summary>Default TTL minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.DefaultMaxPerUser">
+            <summary>Default max orders per user.</summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.MinTtlMinutes">
+            <summary>Minimum TTL minutes.</summary>
+        </member>
+        <member name="F:Shared.Constants.FulfilClaimSettingKeys.MaxTtlMinutes">
+            <summary>Maximum TTL minutes.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAutoPublishQueueStatuses">
+            <summary>Queue/progress status for draft listings in auto publish (list UI).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishQueueStatuses.Queue">
+            <summary>In FIFO line behind the shop head — not next to publish.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishQueueStatuses.Waiting">
+            <summary>Next eligible draft for the shop (FIFO head).</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAutoPublishRunStatuses">
+            <summary>Status values for <see cref="!:Domain.Entities.ListingAutoPublishRun"/>.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingPublishSources">
+            <summary>How a listing was published to 4Seller.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAutoPublishSettingKeys">
+            <summary>
+            Setting keys for background auto publish of draft listings (admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishSettingKeys.MinDraftAgeMinutes">
+            <summary>Minimum allowed min-draft-age for system default and per-shop override (minutes).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishSettingKeys.DefaultCategoryRiskyAncestorIds">
+            <summary>
+            Costumes &amp; Accessories (843656) — its leaves carry costume-only attribute enums that
+            TikTok rejects for ordinary fashion items.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishSettingKeys.DefaultCategoryRiskyTitleKeywords">
+            <summary>
+            Only words that name the product itself. Occasion words alone ("halloween", "carnival") are
+            marketing filler in scraped titles — "Corset Tank Top … Suitable for Music Festivals, Halloween
+            and Other Occasions" is an ordinary top, and 4Seller AI classifies it as one.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishSettingKeys.DefaultCategoryBlockedRemap">
+            <summary>
+            <c>blockedId:replacementId</c> pairs (comma-separated). Measured 2026-09-26: leaf
+            <c>903824</c> (Costume Tops &amp; Corsets) returns TikTok
+            <c>Cannot use custom value names … attribute ID 100401</c> for some shops even when the
+            payload carries a numeric <c>valueId</c> that 4Seller lists in the schema and that other
+            shops publish with. Sibling <c>903952</c> (Costume Sets) accepts the same values.
+            </summary>
+        </member>
+        <member name="M:Shared.Constants.ListingAutoPublishSettingKeys.ResolveMinDraftAgeMinutes(System.Nullable{System.Int32},System.Int32)">
+            <summary>Effective min draft age for a shop (override or system default), never below <see cref="F:Shared.Constants.ListingAutoPublishSettingKeys.MinDraftAgeMinutes"/>.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAutoPublishStepCodes">
+            <summary>Pipeline step codes for auto publish run logs.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.PipelineOrder">
+            <summary>Fixed pipeline order for resume / hydration.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps">
+            <summary>Sub-step codes recorded inside <see cref="F:Shared.Constants.ListingAutoPublishStepCodes.Category"/> for the AI audit trail.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.AiRequest">
+            <summary>What was sent to 4Seller AI (shop, site, title).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.AiResponse">
+            <summary>What 4Seller AI answered (category, path, leaf, validated).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.AiFailed">
+            <summary>AI call failed; the existing category was kept.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.AiInvalid">
+            <summary>AI answered a category missing from the catalog, inactive, or not a leaf.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.Confirmed">
+            <summary>AI agrees with the category already on the listing.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.Assigned">
+            <summary>Listing had no category and took the AI one.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.Overridden">
+            <summary>An unsafe category was replaced by the AI one.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.Kept">
+            <summary>AI disagreed but the existing category stands.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.AttributesReset">
+            <summary>Specifics of the replaced category were dropped so they get mapped again.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingAutoPublishStepCodes.CategorySubSteps.BlockedRemapped">
+            <summary>
+            Listing/AI landed on a blocked leaf (see <c>category_blocked_remap</c>) and was remapped
+            to a publishable sibling without waiting for AI agreement.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingPublishLimitErrors">
+            <summary>TikTok / 4Seller listing quota error tokens and shop block reasons.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingPublishLimitErrors.DayLimitBlockReason">
+            <summary>Stored on <c>Shop.AutoPublishBlockReason</c> after Day_Limit.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingPublishLimitErrors.DayLimitToken">
+            <summary>Opaque token in 4Seller / TikTok failed messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingPublishLimitErrors.ListingBackDayLimit">
+            <summary>Full 4Seller code often shown as 【Publish Failed】Listing.Back.Day_Limit.</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingPublishLimitErrors.IsDayLimit(System.String)">
+            <summary>Whether a failure message indicates daily / back-day listing quota.</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingPublishLimitErrors.IsShopCapacityFailure(System.String)">
+            <summary>Shop-capacity failures must not permanently skip the listing.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingRatingSettingKeys">
+            <summary>
+            Setting keys for listing source-rating color thresholds on admin ListingCard.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRatingSettingKeys.SuccessMin">
+            <summary>Rating ≥ this value → success (green stars). Default 4.4.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRatingSettingKeys.WarningMin">
+            <summary>
+            Rating ≥ this and &lt; success_min → warning (yellow stars).
+            Below this → danger (red stars). Default 4.0.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingRewriteSettingKeys">
+            <summary>
+            Setting keys for listing Rewrite title handling (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.TitleMode">
+            <summary>
+            How Rewrite treats the product title: strip supplier brands or rewrite SEO.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.TitleModeStripBrands">
+            <summary>AI flags brand tokens; C# removes them and keeps the rest of the source title. Titles still under 40 characters take the SEO fallback (Women … + keywords synced to the description).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.TitleModeRewrite">
+            <summary>AI rewrites a machine-first SEO title (150–250 characters; never invent attributes to fill the band).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.DefaultTitleMode">
+            <summary>Default when the setting is missing or unrecognized.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.AllowRepeat">
+            <summary>
+            When true, Rewrite stays clickable after a title/description has already been rewritten.
+            When false (default), the button locks and the operator uses Undo instead — avoids a
+            second paid OpenAI call by accident.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingRewriteSettingKeys.DefaultAllowRepeat">
+            <summary>Default: lock Rewrite after the first successful run.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSizeChartSettingKeys">
+            <summary>
+            Setting keys for automatic Size Chart image generation (admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSizeChartSettingKeys.AutoGenerateEnabled">
+            <summary>
+            When true, ListingEditPage shows the Grok auto-generate Size Chart button.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSizeChartSettingKeys.DefaultAutoGenerateEnabled">
+            <summary>Default: feature off until admin enables.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSpecificsSettingKeys">
+            <summary>
+            Setting keys for Auto Specifics (managed via admin Settings).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSpecificsSettingKeys.AllowRepeat">
+            <summary>
+            When true, Auto Specifics stays clickable after Specifics are already filled
+            (beyond Brand / cert). When false (default), the button locks once mapped —
+            avoids a second paid map-specifics call by accident.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSpecificsSettingKeys.DefaultAllowRepeat">
+            <summary>Default: lock Auto Specifics after the first successful map.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncModes">
+            <summary>Bulk listing pull modes for <c>ListingSyncRequest.SyncMode</c> (legacy wire values).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncModes.Light">
+            <summary>Legacy alias for <see cref="F:Shared.Constants.ListingSyncScopes.Status"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncModes.Full">
+            <summary>Legacy alias for <see cref="F:Shared.Constants.ListingSyncScopes.Full"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncModes.Status">
+            <summary>Published status-only pull (preferred wire value).</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSyncModes.IsLight(System.String)">
+            <summary>True when mode is missing, <see cref="F:Shared.Constants.ListingSyncModes.Light"/>, or <see cref="F:Shared.Constants.ListingSyncModes.Status"/>.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncScopes">
+            <summary>
+            Resolved bulk sync scope: draft content (<see cref="F:Shared.Constants.ListingSyncScopes.Full"/>) vs published status-only (<see cref="F:Shared.Constants.ListingSyncScopes.Status"/>).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncScopes.Full">
+            <summary>Draft pull: page + batch-detail, full <c>ApplyRecord</c> + variations.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncScopes.Status">
+            <summary>Published pull: page only, status fields via <c>ApplyStatusRecord</c>.</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSyncScopes.Resolve(System.String,System.String)">
+            <summary>
+            Resolves scope from <paramref name="syncScope"/> or legacy <paramref name="syncMode"/>.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncLeaseSource">
+            <summary>Who initiated a seller-scoped listing sync lease.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncLeaseSource.Manual">
+            <summary>Admin/seller UI Sync button or API.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncLeaseSource.Background">
+            <summary><c>ListingDraftSyncBackgroundService</c> / <c>ListingPublishedSyncBackgroundService</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncLeaseSource.Extension">
+            <summary>Post-html / push scheduler (extension-driven).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncLeaseSource.AutoPublish">
+            <summary>Auto publish pipeline — multiple concurrent per seller (bounded by global gate).</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncJobStates">
+            <summary>Lifecycle of a manual listing sync job (<c>ListingSyncJobStatusDto.State</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncJobStates.Running">
+            <summary>Still pulling; the client should keep polling.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncJobStates.Completed">
+            <summary>Finished — individual sellers may still have failed.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncJobStates.Failed">
+            <summary>The run itself threw before it could report per-seller results.</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSyncJobStates.IsTerminal(System.String)">
+            <summary>True once polling can stop.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncSellerStatuses">
+            <summary>Per-seller progress inside a listing sync job.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSellerStatuses.Pending">
+            <summary>Queued behind the seller concurrency limit.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSellerStatuses.Running">
+            <summary>Currently pulling from 4Seller.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSellerStatuses.Succeeded">
+            <summary>Finished and counted.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSellerStatuses.Failed">
+            <summary>Failed or ran out of its time budget; other sellers are unaffected.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSellerStatuses.SkippedBusy">
+            <summary>Another pull already held this seller's lease.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncSources">
+            <summary>Wire values for <c>ListingSyncRequest.SyncSource</c> (server-set).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSources.Manual">
+            <summary>Admin/seller list Sync button.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSources.Background">
+            <summary><c>ListingDraftSyncBackgroundService</c> / <c>ListingPublishedSyncBackgroundService</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSources.Extension">
+            <summary>Post-html / push scheduler (extension-driven).</summary>
+        </member>
+        <member name="M:Shared.Constants.ListingSyncSources.Parse(System.String)">
+            <summary>Parses wire value; unknown → Manual.</summary>
+        </member>
+        <member name="T:Shared.Constants.ListingSyncSettingKeys">
+             <summary>
+             Setting keys for the two background 4Seller listing sync loops (managed via admin Settings).
+            
+             <c>draft</c> — light pass that pulls newest drafts (page + batch-detail) on a minutes clock.
+             <c>published</c> — status-only pass that refreshes site status across published buckets inside a
+             create-date lookback window. Each loop has its own on/off and interval so one can run without
+             waiting for the other; a process-wide gate serializes the actual pull so seller leases do not collide.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.LegacyEnabled">
+            <summary>Legacy single-loop enabled flag. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.LegacyIntervalMinutes">
+            <summary>Legacy single-loop interval. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.LegacySyncDraft">
+            <summary>Legacy draft include flag. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.LegacySyncPublished">
+            <summary>Legacy published include flag. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.DraftEnabled">
+            <summary>When true, the API server periodically syncs Draft listings (full scope).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.DraftIntervalMinutes">
+            <summary>
+            Minutes between draft sync runs when enabled.
+            Clamped to <see cref="F:Shared.Constants.ListingSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.ListingSyncSettingKeys.MaxIntervalMinutes"/>.
+            Measured from the end of the previous run.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.PublishedEnabled">
+            <summary>When true, the API server periodically refreshes Published-tab listing statuses.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.PublishedIntervalMinutes">
+            <summary>
+            Minutes between published status sync runs when enabled.
+            Clamped to <see cref="F:Shared.Constants.ListingSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.ListingSyncSettingKeys.MaxIntervalMinutes"/>.
+            Measured from the end of the previous run.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.PublishedLookbackDays">
+            <summary>
+            VN calendar days (including today) for the published create-date window.
+            Clamped to <see cref="F:Shared.Constants.ListingSyncSettingKeys.MinPublishedLookbackDays"/>–<see cref="F:Shared.Constants.ListingSyncSettingKeys.MaxPublishedLookbackDays"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.DefaultDraftIntervalMinutes">
+            <summary>Default minutes between draft sync runs.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.DefaultPublishedIntervalMinutes">
+            <summary>Default minutes between published status sync runs.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.DefaultPublishedLookbackDays">
+            <summary>Default VN lookback days for the published loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.MinIntervalMinutes">
+            <summary>Minimum minutes for either loop interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.MaxIntervalMinutes">
+            <summary>Maximum minutes for either loop interval (24 hours).</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.MinPublishedLookbackDays">
+            <summary>Minimum lookback for the published loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ListingSyncSettingKeys.MaxPublishedLookbackDays">
+            <summary>
+            Maximum lookback for the published loop.
+            Must stay ≤ 31 because <c>AppTimeZones.GetVietnamLookbackUtcRange</c> clamps at 31.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.OrderHandlingSettingKeys">
+            <summary>
+            Setting keys for order handling fees (BuyTrack scan / ThankCard).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderHandlingSettingKeys.BuyTrack">
+            <summary>USD fee to buy USPS scan track. Default 0.5.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderHandlingSettingKeys.ThankCard">
+            <summary>USD fee to buy thank-you card for warehouse-track orders. Default 1.</summary>
+        </member>
+        <member name="T:Shared.Constants.OrderSyncJobStates">
+            <summary>Lifecycle of a manual order sync job (<c>OrderSyncJobStatusDto.State</c>).</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncJobStates.Running">
+            <summary>Still pulling; the client should keep polling.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncJobStates.Completed">
+            <summary>Finished — individual sellers may still have failed (or the gate was busy).</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncJobStates.Failed">
+            <summary>The run itself threw before it could report a result.</summary>
+        </member>
+        <member name="M:Shared.Constants.OrderSyncJobStates.IsTerminal(System.String)">
+            <summary>True once polling can stop.</summary>
+        </member>
+        <member name="T:Shared.Constants.OrderSyncSettingKeys">
+             <summary>
+             Setting keys for the two background 4Seller order sync loops (managed via admin Settings).
+            
+             <c>new</c> — light pass that catches fresh / open / recently canceled orders on a short
+             create-date lookback (minutes). <c>status</c> — heavier pass that refreshes platform
+             commerce status across all six buckets on a long lookback (hours). Each loop has its own
+             on/off, clock and account batch size so one can run without waiting for the other.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.LegacyEnabled">
+            <summary>Legacy single-loop enabled flag. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.LegacyIntervalMinutes">
+            <summary>Legacy single-loop interval. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.LegacyLookbackDays">
+            <summary>Legacy single-loop lookback. Removed after migrate.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.NewEnabled">
+            <summary>When true, the API server periodically syncs new / open / recent canceled orders.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.NewIntervalMinutes">
+            <summary>Minutes between new-order sync runs. Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxIntervalMinutes"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.NewLookbackDays">
+            <summary>
+            VN calendar days (including today) for the new-orders create-date window.
+            Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinNewLookbackDays"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxNewLookbackDays"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.NewBatchSize">
+            <summary>
+            How many 4Seller accounts run in parallel inside one new-orders pass.
+            Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinBatchSize"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxBatchSize"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.StatusEnabled">
+            <summary>When true, the API server periodically refreshes platform status across all six buckets.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.StatusIntervalHours">
+            <summary>Hours between status sync runs. Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinIntervalHours"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxIntervalHours"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.StatusLookbackDays">
+            <summary>
+            VN calendar days (including today) for the status create-date window.
+            Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinStatusLookbackDays"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxStatusLookbackDays"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.StatusBatchSize">
+            <summary>
+            How many 4Seller accounts run in parallel inside one status pass.
+            Clamped to <see cref="F:Shared.Constants.OrderSyncSettingKeys.MinBatchSize"/>–<see cref="F:Shared.Constants.OrderSyncSettingKeys.MaxBatchSize"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultNewIntervalMinutes">
+            <summary>Default minutes between new-order sync runs.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultNewLookbackDays">
+            <summary>Default VN lookback days for the new-orders loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultNewBatchSize">
+            <summary>Default account batch size for the new-orders loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultStatusIntervalHours">
+            <summary>Default hours between status sync runs.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultStatusLookbackDays">
+            <summary>Default VN lookback days for the status loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.DefaultStatusBatchSize">
+            <summary>Default account batch size for the status loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MinIntervalMinutes">
+            <summary>Minimum minutes for the new-orders interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MaxIntervalMinutes">
+            <summary>Maximum minutes for the new-orders interval (24 hours).</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MinIntervalHours">
+            <summary>Minimum hours for the status interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MaxIntervalHours">
+            <summary>Maximum hours for the status interval (7 days).</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MinNewLookbackDays">
+            <summary>Minimum lookback for the new-orders loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MaxNewLookbackDays">
+            <summary>Maximum lookback for the new-orders loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MinStatusLookbackDays">
+            <summary>Minimum lookback for the status loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MaxStatusLookbackDays">
+            <summary>Maximum lookback for the status loop.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MinBatchSize">
+            <summary>Minimum account batch size.</summary>
+        </member>
+        <member name="F:Shared.Constants.OrderSyncSettingKeys.MaxBatchSize">
+            <summary>Maximum account batch size.</summary>
+        </member>
+        <member name="T:Shared.Constants.ProductDiscountSyncSettingKeys">
+            <summary>Settings keys for background product-discount activity sync from 4Seller.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSettingKeys.Enabled">
+            <summary>Enable background Product Discount sync.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSettingKeys.IntervalHours">
+            <summary>
+            Hours to wait after a completed automatic PD sync before the next run (minimum 1).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSettingKeys.IntervalMinutes">
+            <summary>Legacy minutes key — no longer read by the background job.</summary>
+        </member>
+        <member name="T:Shared.Constants.FlashDealSyncSettingKeys">
+            <summary>Settings keys for background Flash Deal activity sync from 4Seller.</summary>
+        </member>
+        <member name="F:Shared.Constants.FlashDealSyncSettingKeys.Enabled">
+            <summary>Enable background Flash Deal sync.</summary>
+        </member>
+        <member name="F:Shared.Constants.FlashDealSyncSettingKeys.IntervalHours">
+            <summary>
+            Hours to wait after a completed automatic Flash Deal sync before the next run (minimum 1).
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.PromotionDiscountTypes">
+            <summary>4Seller promotion activity discountType values we care about.</summary>
+        </member>
+        <member name="F:Shared.Constants.PromotionDiscountTypes.FlashSale">
+            <summary>TikTok Flash Deal / flash sale activities.</summary>
+        </member>
+        <member name="T:Shared.Constants.ProductDiscountSyncJobStates">
+            <summary>Lifecycle of a manual product-discount sync job.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncJobStates.Running">
+            <summary>Still pulling; keep polling.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncJobStates.Completed">
+            <summary>Finished (individual sellers may have failed).</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncJobStates.Failed">
+            <summary>The run itself threw.</summary>
+        </member>
+        <member name="M:Shared.Constants.ProductDiscountSyncJobStates.IsTerminal(System.String)">
+            <summary>True once polling can stop.</summary>
+        </member>
+        <member name="T:Shared.Constants.ProductDiscountSyncSellerStatuses">
+            <summary>Per-seller progress inside a product-discount sync job.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSellerStatuses.Pending">
+            <summary>Queued behind concurrency limit.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSellerStatuses.Running">
+            <summary>Currently pulling from 4Seller.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSellerStatuses.Succeeded">
+            <summary>Finished successfully.</summary>
+        </member>
+        <member name="F:Shared.Constants.ProductDiscountSyncSellerStatuses.Failed">
+            <summary>Failed; other sellers continue.</summary>
+        </member>
+        <member name="T:Shared.Constants.RealtimeGroups">
+            <summary>SignalR group names for realtime broadcasts.</summary>
+        </member>
+        <member name="F:Shared.Constants.RealtimeGroups.FulfilQueue">
+            <summary>
+            Fulfil / Admin clients watching the purchase queue — receive <c>orderClaimChanged</c>.
+            Joined when the connection has permission <c>admin.orders.view</c>.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.SettingTypes">
+            <summary>
+            Supported setting value types.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SettingTypes.Text">
+            <summary>Plain text value.</summary>
+        </member>
+        <member name="F:Shared.Constants.SettingTypes.Number">
+            <summary>Numeric value.</summary>
+        </member>
+        <member name="F:Shared.Constants.SettingTypes.Boolean">
+            <summary>Boolean toggle (true/false).</summary>
+        </member>
+        <member name="F:Shared.Constants.SettingTypes.Password">
+            <summary>Sensitive value (masked in UI).</summary>
+        </member>
+        <member name="F:Shared.Constants.SettingTypes.All">
+            <summary>All valid types.</summary>
+        </member>
+        <member name="T:Shared.Constants.SheinDetailSyncSettingKeys">
+             <summary>
+             Setting keys for the backend-driven SHEIN order-detail sweep (managed via admin Settings).
+            
+             Unlike <see cref="T:Shared.Constants.ExtensionSheinSyncSettingKeys"/> this loop never paginates
+             <c>order/list</c>: it only replays <c>get_order_info</c> for billnos already stored in the
+             ledger that still lack real carrier tracking or a published Mark Ship, using the cookie +
+             headers the extension pushed onto the fulfil account. That keeps the pass cheap and lets
+             tracking reach the platform even when nobody has the browser open.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.Enabled">
+            <summary>When true, the API server runs full detail-sync cycles on the configured rest interval.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.IntervalMinutes">
+            <summary>
+            Minutes to rest after a full cycle finishes before starting the next snapshot.
+            Clamped to <see cref="F:Shared.Constants.SheinDetailSyncSettingKeys.MinIntervalMinutes"/>–<see cref="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxIntervalMinutes"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxBillnos">
+            <summary>Billnos processed per batch inside one cycle (cycle still covers the full snapshot).</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxMarkShipPerPass">
+            <summary>
+            Ceiling on remote 4Seller Mark Ship calls per batch. The extension path is capped at 2 by
+            <c>OrderAutoMarkShipPolicy.MaxAttemptsPerSyncRequest</c> because Cloudflare cuts the HTTP
+            request at ~100s; a background batch has no such deadline.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.NotifyCarrierTracking">
+            <summary>
+            When true, Telegram gets one message per order the moment this sweep turns a warehouse-only
+            (or missing) code into real carrier tracking — reporting the Mark Ship outcome, not just the
+            tracking. Sent after Mark Ship ran, so a message never claims the platform has a code it does not.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.TelegramChatId">
+            <summary>Telegram chat that receives the Add track messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.DefaultTelegramChatId">
+            <summary>Default chat for Add track messages (same ops group as cancel/refund).</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.DefaultIntervalMinutes">
+            <summary>Default rest between full cycles (minutes).</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MinIntervalMinutes">
+            <summary>Minimum rest — below this a slow cycle can feel continuous.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxIntervalMinutes">
+            <summary>Maximum rest (3 hours).</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.DefaultMaxBillnos">
+            <summary>Default billno batch size inside a cycle.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MinMaxBillnos">
+            <summary>Minimum billno ceiling.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxMaxBillnos">
+            <summary>Maximum billno ceiling.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.DefaultMaxMarkShipPerPass">
+            <summary>Default Mark Ship ceiling per pass.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MinMaxMarkShipPerPass">
+            <summary>Minimum Mark Ship ceiling.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxMaxMarkShipPerPass">
+            <summary>Maximum Mark Ship ceiling.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinDetailSyncSettingKeys.MaxSessionAge">
+            <summary>
+            UI warning threshold only — the sweep still probes SHEIN with the stored cookie.
+            A captured session older than this is shown as "Cũ" on the fulfil-accounts page;
+            whether it still works is decided by a live <c>get_order_info</c> (or Test session).
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.SheinSessionKeys">
+            <summary>
+            SHEIN storefront session bits captured by the fulfil extension and replayed by the backend.
+            These headers are session-scoped (not signed per request), which is why the same set works
+            across pages and billnos.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.RequiredHeaders">
+            <summary>Headers without which SHEIN rejects an order API call.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.DefaultOrigin">
+            <summary>Storefront origin used when the account has none stored.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.DeniedHeaders">
+            <summary>Headers that must never be persisted — they are per-connection, content-only, or rebuilt per request.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.MaxHeaders">
+            <summary>Cap on stored header count, so a runaway capture cannot bloat the row.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.MaxHeaderValueLength">
+            <summary>Cap on a single stored header value.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSessionKeys.MaxCookieLength">
+            <summary>Cap on the stored cookie header.</summary>
+        </member>
+        <member name="M:Shared.Constants.SheinSessionKeys.MissingRequiredHeaders(System.Collections.Generic.IReadOnlyDictionary{System.String,System.String})">
+            <summary>Returns the required headers missing from a captured set.</summary>
+        </member>
+        <member name="T:Shared.Constants.SheinSkipReasons">
+             <summary>
+             Lý do một billno SHEIN không được gắn vào đơn sàn trong một lượt đồng bộ.
+            
+             Trước đây extension đếm lý do bằng cách dò chuỗi tiếng Việt trong <c>Notes</c>, nên chỉ hai
+             nhánh có regex mới hiện lên thông báo còn sáu nhánh còn lại biến mất — tổng "khớp + bỏ qua"
+             không bao giờ bằng số đơn đã lấy. Mã ổn định ở đây là hợp đồng giữa backend và extension để
+             mọi lần bỏ qua đều đếm được.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.MembershipVirtual">
+            <summary>SHEIN Club / Saver / Prime / hàng ảo — không phải một lần mua hàng thật.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.UnpaidGhost">
+            <summary>SHEIN báo chưa thanh toán (<c>pay_time = 0</c>) và chưa từng có mốc trừ tiền.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.TerminalUnlinked">
+            <summary>
+            Billno đã huỷ hoặc hoàn trên SHEIN. Tiền đã về tài khoản mua hàng nên không gắn vào đơn sàn
+            và nếu đang gắn thì gỡ ra — để người đi đơn mua lại từ tài khoản SHEIN khác (SKU không còn bị
+            chiếm). Cùng một mã cho billno chưa từng gắn lẫn billno vừa bị gỡ.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.SupplierTerminal">
+            <summary>Alias tường minh của <see cref="F:Shared.Constants.SheinSkipReasons.TerminalUnlinked"/> — huỷ/hoàn đã gỡ khỏi đơn.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.MissingAddress">
+            <summary>Payload thiếu <c>shipping_telephone</c> hoặc <c>shipping_postcode</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.AddressConflict">
+            <summary>Đơn đã gắn billno này nhưng phone/zip trên payload mâu thuẫn với đơn local.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.AmbiguousMatch">
+            <summary>Nhiều đơn cùng phone+zip và sku không phân giải được đơn nào đúng.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.SiblingLinked">
+            <summary>Đơn cùng khách đã gắn billno khác và không đủ căn cứ gắn thêm link.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.NoLocalMatch">
+            <summary>Có đủ phone+zip nhưng không đơn nào trong pool khớp chính xác cả hai.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.AwaitingDetail">
+            <summary>
+            Billno lần đầu: đã ghi nhận nhưng <b>hoãn khớp</b> đến phase detail (list thiếu
+            <c>order_type</c>/breakdown — khớp sớm dễ gắn Club rồi gỡ, hoặc gắn sổ cái khi giá còn sparse).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.DuplicateBillno">
+            <summary>
+            Billno đang thuộc một đơn khác. Cột <c>SupplierOrderNo</c> có unique index toàn DB nên chế độ
+            <c>new</c> không được gắn thêm; chỉ chế độ <c>all</c> mới thu hồi và chuyển sang đơn vừa khớp.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.LedgerDeleted">
+            <summary>
+            Legacy: từng dùng khi xoá dòng chi sổ cái chỉ gỡ về <c>ignored</c>. Hiện xoá CostUpdate xóa
+            hẳn lần mua; mã còn lại cho dữ liệu cũ / nhật ký skip.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.OperatorIgnored">
+            <summary>
+            Dòng đang ở trạng thái <c>ignored</c> mà không có lý do cụ thể nào được ghi trước đó — người xử
+            lý bấm "Bỏ qua" ở trang hàng đợi.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.PurchasedBeforeOrder">
+            <summary>Mua trước khi đơn sàn được đặt — không thể là hàng của đơn đó.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.ManualDetach">
+            <summary>Người xử lý tự gỡ khỏi đơn ở trang hàng đợi.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.RebalancedToSibling">
+            <summary>
+            Đơn đang giữ nhiều lần mua hơn số dòng hàng của nó nên billno này được chuyển sang đơn anh em
+            cùng khách còn trống. Dùng làm lý do gỡ tạm ở bước chuyển — dòng mua được gắn lại ngay trong
+            cùng lượt nên không dừng ở hàng đợi.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.ManualLinkLocked">
+            <summary>
+            Người xử lý đã tự chọn đơn cho billno này (<c>SupplierPurchase.ManualLinkedAt</c>) nên lượt
+            sync không khớp lại. Chỉ báo cáo khi đơn đang giữ nằm ngoài pool lượt này — đơn trong pool
+            vẫn được refresh bình thường trên chính nó.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.PlatformCanceled">
+            <summary>
+            Ứng viên duy nhất là đơn sàn đã hủy/hoàn và mốc mua SHEIN xảy ra <b>sau</b> mốc hủy — không
+            gắn (tiền không thuộc đơn đã đóng). Dòng mua vào hàng đợi Đơn NCC chưa gắn.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinSkipReasons.MovedOffCanceledOrder">
+            <summary>
+            Billno đang gắn trên đơn sàn đã hủy/hoàn trong khi còn đơn anh em còn hiệu lực — chuyển sang
+            đơn sống trong cùng lượt (không nằm lại hàng đợi).
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.SheinNeedsDetailReasons">
+            <summary>
+            Lý do phase <c>list</c> vẫn phải gọi <c>get_order_info</c> cho một billno.
+            Detail là phần đắt nhất của một lượt sync (một request SHEIN mỗi billno), nên phải biết điều
+            kiện nào bật thì mới đánh giá được gate có siết đúng hay không.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.FirstSeen">
+            <summary>
+            Billno lần đầu vào <c>SupplierPurchases</c> — cần full detail (kể cả chưa khớp đơn sàn),
+            trừ unpaid/terminal đã rõ từ list.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.NewLink">
+            <summary>Link mới (hoặc link joint mới) — cần breakdown giá.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.CostIncomplete">
+            <summary>Sau khi merge list, link vẫn thiếu subtotal hoặc total.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.TotalDelta">
+            <summary>Total trên payload khác total đã lưu — cần detail để dựng lại breakdown.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.NoCarrierTracking">
+            <summary>Đã rời kho nhưng chưa có mã vận đơn chặng cuối.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.MissingMilestoneClock">
+            <summary>Trạng thái kết thúc/đã gửi nhưng thiếu clock mốc mà list không cung cấp.</summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.ModeAll">
+            <summary>
+            Chế độ <c>all</c>: mọi billno đã khớp đều phải lấy lại <c>get_order_info</c> vì mục đích của
+            chế độ này là dựng lại breakdown giá từ dữ liệu mới, không phải merge lên số cũ.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.WalletCostStale">
+            <summary>
+            Nghi ngờ ví cashback bị đổ vào coupon (Total=0, Coupon&gt;0, Wallet=0) — cần detail để đọc
+            <c>usedWalletPrice</c> và tách lại.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.SheinNeedsDetailReasons.PendingAutoMarkShip">
+            <summary>
+            Auto Mark Ship bị hoãn theo ngân sách của request (xem
+            <c>OrderAutoMarkShipPolicy.MaxAttemptsPerSyncRequest</c>). Không phải cần dữ liệu detail:
+            billno chỉ cần thêm một lượt POST trong cùng run để đẩy nốt mã lên sàn — nếu chờ lượt sync
+            sau thì fingerprint list đã đứng yên (mã vận đơn không đổi nữa) nên Auto Sync bỏ qua cả lượt.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.ShopBankMatchStatuses">
+            <summary>
+            Last-4 digit match between TikTok settlement bank and the shop's receiving-bank card.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBankMatchStatuses.Matched">
+            <summary>Both sides have ≥4 digits and tails match.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBankMatchStatuses.Mismatched">
+            <summary>Both sides have ≥4 digits but tails differ.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBankMatchStatuses.MissingSettlement">
+            <summary>Shop has a receiving-bank card but TikTok settlement bank is missing/short.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBankMatchStatuses.MissingReceivingBank">
+            <summary>Shop has no receiving-bank card (or account number has fewer than 4 digits).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBankMatchStatuses.All">
+            <summary>All accepted bank-match status strings.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopBodySizeCodes">
+            <summary>
+            Whitelist of shop catalog body/size group codes (Select presets).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Regular">
+            <summary>Regular / Straight Size.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Plus">
+            <summary>Plus Size.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Midsize">
+            <summary>Midsize (between straight and plus).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Curvy">
+            <summary>Curvy.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Petite">
+            <summary>Petite.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.Tall">
+            <summary>Tall.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopBodySizeCodes.All">
+            <summary>All allowed codes (order = display order).</summary>
+        </member>
+        <member name="M:Shared.Constants.ShopBodySizeCodes.IsValid(System.String)">
+            <summary>Returns true when <paramref name="code"/> is a known body-size code.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopOnlineCloseReasons">
+            <summary>Close reasons for <c>ShopOnlineSessions</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.TabClosed">
+            <summary>Last seller-us tab closed while Chrome still running.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.BrowserRestartReconcile">
+            <summary>Extension found a pending local session after Chrome restart / crash.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.HeartbeatTimeout">
+            <summary>No heartbeat within the grace window — closed at LastSeenAt.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.DayBoundary">
+            <summary>Session crossed Vietnam midnight — closed at end of previous VN day.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.Explicit">
+            <summary>Replaced by a newer client session or explicit close without a specific reason.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOnlineCloseReasons.All">
+            <summary>All accepted close-reason strings.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopOperationalPeriodSources">
+            <summary>
+            Source tags for <c>ShopOperationalPeriod</c> open/close events.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.Active">
+            <summary>Shop became Active (create or status change).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.Backfill">
+            <summary>Inferred from migration / historical reconstruction.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.OrderHistory">
+            <summary>Start pulled earlier by a synced historical non-canceled order.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.Deactivated">
+            <summary>Shop became Deactivated.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.Suspended">
+            <summary>Shop became Suspended.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.OwnerChanged">
+            <summary>Shop owner was reassigned.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopOperationalPeriodSources.Deleted">
+            <summary>Shop was deleted.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopStyleCodes">
+            <summary>
+            Whitelist of shop catalog fashion-style codes — khớp facet Style Shein (attr group 101)
+            đã lấy từ URL pdsearch thật. Code không có trên Shein (<c>casual-woman</c>/<c>royal</c>) không còn trong list.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Elegant">
+            <summary>Elegant — thanh lịch, tinh tế, trưởng thành. Shein 101_257.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Casual">
+            <summary>Casual — đời thường, dễ mặc, thoải mái. Shein 101_167.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Vintage">
+            <summary>Vintage — cảm hứng thập niên trước, floral/retro. Shein 101_730.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Sexy">
+            <summary>Sexy — nhấn quyến rũ, ôm dáng / cut-out. Shein 101_580.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Boho">
+            <summary>Boho — Bohemian, phóng khoáng, resort/festival. Shein 101_725.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Cute">
+            <summary>Cute — trẻ trung, đáng yêu, nữ tính. Shein 101_231.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Glamorous">
+            <summary>Glamorous — lộng lẫy, sequin/metallic. Shein 101_493.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Vacation">
+            <summary>Vacation — resort / biển / du lịch. Shein 101_2489.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Modest">
+            <summary>Modest — kín đáo nhưng vẫn thời trang. Shein 101_1547.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.Party">
+            <summary>Party — tiệc, club, sự kiện. Shein 101_2491.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopStyleCodes.All">
+            <summary>All allowed codes (order = shop UI). Max selection = count.</summary>
+        </member>
+        <member name="P:Shared.Constants.ShopStyleCodes.MaxPerShop">
+            <summary>Maximum styles per shop (full whitelist).</summary>
+        </member>
+        <member name="P:Shared.Constants.ShopStyleCodes.AllowedList">
+            <summary>Comma list for validation / error copy.</summary>
+        </member>
+        <member name="M:Shared.Constants.ShopStyleCodes.IsValid(System.String)">
+            <summary>Returns true when <paramref name="code"/> is a known style code.</summary>
+        </member>
+        <member name="M:Shared.Constants.ShopStyleCodes.Canonical(System.String)">
+            <summary>Canonical code from whitelist, or null if unknown.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTaskKeys">
+            <summary>Mã nhiệm vụ hệ thống hiển thị trên bảng nhiệm vụ theo shop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskKeys.SyncExtension">
+            <summary>Mở shop và đồng bộ dữ liệu qua extension TikTok Shop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskKeys.UrlVisit">
+            <summary>Truy cập URL TikTok Shop do admin cấu hình (một mã dùng chung, phân biệt bằng definitionId).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskKeys.ListingFill">
+            <summary>List đủ listing so với publish limit của shop.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskKeys.DelistCleanup">
+            <summary>Hủy list rác để lấy lại slot đăng bán.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTaskGroups">
+            <summary>Nhóm nhiệm vụ trên UI.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskGroups.Daily">
+            <summary>Nhiệm vụ phải làm mỗi ngày.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskGroups.Optimize">
+            <summary>Nhiệm vụ tối ưu shop (không theo ngày).</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTaskSources">
+            <summary>Nguồn ghi nhận <see cref="!:Domain.Entities.ShopTaskCompletion"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskSources.Extension">
+            <summary>Extension TikTok Shop tự mở URL trong lượt Sync.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTaskUrlHosts">
+            <summary>Host được phép đặt cho nhiệm vụ truy cập URL (khớp host_permissions của extension).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskUrlHosts.SellerUs">
+            <summary>TikTok Shop US seller center.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskUrlHosts.Allowed">
+            <summary>Danh sách host hợp lệ.</summary>
+        </member>
+        <member name="T:Shared.Constants.ShopTaskStatuses">
+            <summary>Trạng thái một nhiệm vụ của shop trên bảng nhiệm vụ.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskStatuses.Done">
+            <summary>Đã hoàn thành trong ngày (hoặc không còn việc phải làm).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskStatuses.Pending">
+            <summary>Chưa làm — vẫn còn thời gian trong ngày.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskStatuses.Attention">
+            <summary>Cần xử lý ngay (ví dụ hết slot đăng bán).</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskStatuses.Blocked">
+            <summary>Không đánh giá được vì thiếu dữ liệu đầu vào.</summary>
+        </member>
+        <member name="F:Shared.Constants.ShopTaskStatuses.Failed">
+            <summary>Lần thực hiện gần nhất thất bại.</summary>
+        </member>
+        <member name="T:Shared.Constants.SupplierPurchaseMatchStates">
+             <summary>
+             Trạng thái khớp của một dòng <c>SupplierPurchases</c>.
+            
+             Ghi nhận tách hẳn khỏi khớp: mọi lần mua vào bảng <b>trước</b> khi chạy khớp, nên một lần khớp
+             sai hay pool hụt cũng không làm mất dấu vết lần mua nào.
+             </summary>
+        </member>
+        <member name="F:Shared.Constants.SupplierPurchaseMatchStates.Matched">
+            <summary>Đã gắn vào một đơn sàn — <c>OrderId</c> có giá trị.</summary>
+        </member>
+        <member name="F:Shared.Constants.SupplierPurchaseMatchStates.Unmatched">
+            <summary>Chưa gắn được, còn nằm trong hàng đợi xử lý tay.</summary>
+        </member>
+        <member name="F:Shared.Constants.SupplierPurchaseMatchStates.Ignored">
+            <summary>Người xử lý đã xem và quyết định bỏ qua (Club/Saver, đơn cá nhân, mua thử…).</summary>
+        </member>
+        <member name="T:Shared.Constants.SupplierPurchaseSources">
+            <summary>Nguồn của một dòng <c>SupplierPurchases</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.SupplierPurchaseSources.Shein">
+            <summary>Sync SHEIN ghi nhận.</summary>
+        </member>
+        <member name="F:Shared.Constants.SupplierPurchaseSources.Manual">
+            <summary>Người đi đơn nhập tay qua nút "Cập nhật phí".</summary>
+        </member>
+        <member name="T:Shared.Constants.TelegramSettingKeys">
+            <summary>
+            Setting keys for Telegram notification toggles/schedules (managed via admin Settings).
+            BotToken lives in appsettings <c>Telegram</c> section; chat ids can be overridden in Settings.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyNewOrder">
+            <summary>When true, send a message for each newly inserted order.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyCancelRefund">
+            <summary>When true, send a message for newly canceled / refunded orders.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.OrdersChatId">
+            <summary>
+            Chat / group id for new orders + daily order summary + seller summary.
+            Empty → fallback <c>Telegram:ChatId</c> in appsettings.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.CancelRefundChatId">
+            <summary>
+            Chat / group id for ops: cancel/refund, USPS, warehouse track, fulfil summary,
+            order message, stale no-tracking.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.DailySummaryEnabled">
+            <summary>When true, send a daily order status summary.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.DailySummaryHour">
+            <summary>Local clock <c>HH:mm</c> (Asia/Ho_Chi_Minh) to push the daily summary. Legacy bare hour 0–23 still accepted.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.DailySummaryLastSentDate">
+            <summary>Last sent local date (yyyy-MM-dd) to avoid duplicate daily messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.SellerSummaryEnabled">
+            <summary>When true, send a daily per-seller Listed/Order/Revenue summary.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.SellerSummaryHour">
+            <summary>Local clock <c>HH:mm</c> (Asia/Ho_Chi_Minh) to push the seller summary. Legacy bare hour 0–23 still accepted.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.SellerSummaryLastSentDate">
+            <summary>Last sent local date (yyyy-MM-dd) to avoid duplicate seller summary messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.FulfilSummaryEnabled">
+            <summary>When true, send a daily fulfil / purchase processing summary.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.FulfilSummaryHour">
+            <summary>Local clock <c>HH:mm</c> (Asia/Ho_Chi_Minh) to push the fulfil summary.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.FulfilSummaryLastSentDate">
+            <summary>Last sent local date (yyyy-MM-dd) to avoid duplicate fulfil summary messages.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyUsps">
+            <summary>When true, notify fulfil when an order first needs USPS BuyTrack handling.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyWarehouseTrack">
+            <summary>When true, notify fulfil when Shein warehouse / local tracking first appears.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyOrderMessage">
+            <summary>When true, notify ops chat when an order local message (Thông báo) is saved with content.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyStaleNoTracking">
+            <summary>
+            When true, send a daily ops digest of purchased orders still without last-mile tracking
+            after <see cref="F:Shared.Constants.TelegramSettingKeys.NotifyStaleNoTrackingHours"/> hours. Uses the same local clock as
+            <see cref="F:Shared.Constants.TelegramSettingKeys.FulfilSummaryHour"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyStaleNoTrackingHours">
+            <summary>Hours since purchase before the stale-no-tracking digest. Default 72.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.NotifyStaleNoTrackingLastSentDate">
+            <summary>Last sent local date (yyyy-MM-dd) to avoid duplicate stale-no-tracking digests.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.DefaultStaleNoTrackingHours">
+            <summary>Default hours for <see cref="F:Shared.Constants.TelegramSettingKeys.NotifyStaleNoTrackingHours"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.MinStaleNoTrackingHours">
+            <summary>Minimum allowed hours for the stale-no-tracking threshold.</summary>
+        </member>
+        <member name="F:Shared.Constants.TelegramSettingKeys.MaxStaleNoTrackingHours">
+            <summary>Maximum allowed hours for the stale-no-tracking threshold (30 days).</summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokAttributeRejectionErrors">
+            <summary>
+            Reads the TikTok publish failure that names a product attribute value it will not accept.
+            <para>
+            Sample, as it arrives through 4Seller's <c>failedMessage</c> (sometimes behind a
+            【Publish Failed】 prefix): <c>Operation Not Allowed. Cannot use custom value names for product
+            attribute `Washing instructions`: attribute ID `100401` does not support custom value names.
+            Remove or replace the custom value `Do not dry clean` and retry.</c>
+            </para>
+            <para>
+            TikTok reports this whenever a value reaches it without an id it recognises for that attribute —
+            including a value 4Seller still lists with a numeric id — so the message is the only reliable
+            evidence that the value is gone.
+            </para>
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionErrors.CustomValueMarker">
+            <summary>Cheap pre-check before running the regex over every sync error.</summary>
+        </member>
+        <member name="M:Shared.Constants.TikTokAttributeRejectionErrors.TryParseCustomValueRejection(System.String,System.String@,System.String@,System.String@)">
+            <summary>Parses attribute id, attribute label and rejected value name from a failure message.</summary>
+        </member>
+        <member name="M:Shared.Constants.TikTokAttributeRejectionErrors.ReadSentValueId(System.String,System.String,System.String)">
+            <summary>
+            Finds the <c>valueId</c> a listing payload carried for <paramref name="valueName"/> under
+            <paramref name="attributeId"/>, or null when the payload only carried the name.
+            </summary>
+            <remarks>
+            Tells apart the two causes of "cannot use custom value names": TikTok dropped the value from
+            its enum (we sent a valid id and it still refused), versus our mapping never found an id. Only
+            the first is evidence worth remembering.
+            </remarks>
+        </member>
+        <member name="M:Shared.Constants.TikTokAttributeRejectionErrors.NormalizeValueKey(System.String)">
+            <summary>
+            Same shape as the Specifics mapper's key normalization (lowercase, alphanumerics only) so both
+            sides match "Machine washable" to "machinewashable".
+            </summary>
+        </member>
+        <member name="M:Shared.Constants.TikTokAttributeRejectionErrors.CustomValueRejectionRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>custom value names for product attribute\\s+`(?&lt;attrName&gt;[^`]+)`.*?attribute ID\\s+`(?&lt;attrId&gt;\\d+)`.*?custom value\\s+`(?&lt;value&gt;[^`]+)`</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase | RegexOptions.Singleline</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [Cc].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Ss].<br/>
+            ○ Match a character in the set [Tt].<br/>
+            ○ Match a character in the set [Oo].<br/>
+            ○ Match a character in the set [Mm].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Vv].<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Ll].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Nn].<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Mm].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match a character in the set [Ss].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Ff].<br/>
+            ○ Match a character in the set [Oo].<br/>
+            ○ Match a character in the set [Rr].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Pp].<br/>
+            ○ Match a character in the set [Rr].<br/>
+            ○ Match a character in the set [Oo].<br/>
+            ○ Match a character in the set [Dd].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Cc].<br/>
+            ○ Match a character in the set [Tt].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Tt] exactly 2 times.<br/>
+            ○ Match a character in the set [Rr].<br/>
+            ○ Match a character in the set [Ii].<br/>
+            ○ Match a character in the set [Bb].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Tt].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match a whitespace character atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            ○ "attrName" capture group.<br/>
+                ○ Match a character other than '`' atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            ○ Match any character lazily any number of times.<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Tt] exactly 2 times.<br/>
+            ○ Match a character in the set [Rr].<br/>
+            ○ Match a character in the set [Ii].<br/>
+            ○ Match a character in the set [Bb].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Tt].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Ii].<br/>
+            ○ Match a character in the set [Dd].<br/>
+            ○ Match a whitespace character atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            ○ "attrId" capture group.<br/>
+                ○ Match a Unicode digit atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            ○ Match any character lazily any number of times.<br/>
+            ○ Match a character in the set [Cc].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Ss].<br/>
+            ○ Match a character in the set [Tt].<br/>
+            ○ Match a character in the set [Oo].<br/>
+            ○ Match a character in the set [Mm].<br/>
+            ○ Match ' '.<br/>
+            ○ Match a character in the set [Vv].<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Ll].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match a whitespace character atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            ○ "value" capture group.<br/>
+                ○ Match a character other than '`' atomically at least once.<br/>
+            ○ Match '`'.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:Shared.Constants.TikTokAttributeRejectionErrors.NonAlphaNumRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>[^a-z0-9]</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [^0-9A-Za-z\u212A].<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:Shared.Constants.TikTokAttributeRejectionSources">
+            <summary>Where a <c>TikTokAttributeValueRejection</c> row came from.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionSources.Seed">
+            <summary>Shipped with the database, from failures observed before the learning existed.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionSources.PublishError">
+            <summary>Parsed from a publish failure returned by TikTok via 4Seller.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionSources.Manual">
+            <summary>Entered by an admin.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionSources.MissingValueId">
+            <summary>
+            TikTok reported the value as a custom name, but the payload we sent carried no numeric
+            <c>valueId</c> for it — that is our own mapping gap, not proof TikTok withdrew the value.
+            Recorded for diagnosis and deliberately kept out of the denylist.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokAttributeRejectionSources.ContradictedByLive">
+            <summary>
+            The rejection carried a numeric <c>valueId</c>, but listings **live on TikTok** in the same
+            category still use that exact id — so the value was not withdrawn and the refusal came from
+            the payload we built, not from the enum. Recorded for diagnosis, kept out of the denylist:
+            blocking a value that hundreds of live listings use empties a mandatory attribute and turns
+            "custom value" into "missing required Specifics" for every later publish.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokShopHealthRecordTypes">
+            <summary>Record type values for <see cref="!:Domain.Entities.TikTokShopHealthRecord"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopHealthRecordTypes.Violation">
+            <summary>POST growth_center/shop/violation/records/list.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopHealthRecordTypes.Warning">
+            <summary>POST growth_center/shop/warning/records/list.</summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokShopHealthRecordStatuses">
+            <summary>TikTok <c>state.record_status</c> values we treat as active for UI counts.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopHealthRecordStatuses.Active">
+            <summary>Record đang hiển thị trên Health Center.</summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokShopSyncSources">
+            <summary>Source values for <see cref="!:Domain.Entities.TikTokShopSyncLog"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncSources.Manual">
+            <summary>User bấm Sync trên extension.</summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokShopSyncStatuses">
+            <summary>Status values for <see cref="!:Domain.Entities.TikTokShopSyncLog"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncStatuses.Completed">
+            <summary>Sync thành công.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncStatuses.Failed">
+            <summary>Đã thử nhưng lỗi.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncStatuses.Skipped">
+            <summary>Bỏ qua vì thiếu điều kiện (chưa login, chưa có tab, …).</summary>
+        </member>
+        <member name="T:Shared.Constants.TikTokShopSyncTypes">
+            <summary>Sync type values for <see cref="!:Domain.Entities.TikTokShopSyncLog"/>.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.Profile">
+            <summary>PUT /shops/tiktok-profile — shop info.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.Payout">
+            <summary>POST /shops/tiktok-payouts/sync — finance ledger.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.Opportunity">
+            <summary>POST /shops/tiktok-opportunities/sync — trending keywords.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.Analytics">
+            <summary>POST /shops/tiktok-listing-analytics/sync — Compass product analysis.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.HealthCenter">
+            <summary>POST /shops/tiktok-health-records/sync — Growth Center violations/warnings.</summary>
+        </member>
+        <member name="F:Shared.Constants.TikTokShopSyncTypes.ShopScore">
+            <summary>POST /shops/tiktok-shop-scores/sync — AHR + Shop Performance Score.</summary>
+        </member>
+        <member name="T:Shared.Constants.UiThemeModes">
+            <summary>
+            Per-user UI theme preference values stored on <c>ApplicationUser.Theme</c>.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UiThemeModes.Light">
+            <summary>Light appearance (default).</summary>
+        </member>
+        <member name="F:Shared.Constants.UiThemeModes.Dark">
+            <summary>Dark appearance (Cursor / OpenAI-platform style).</summary>
+        </member>
+        <member name="F:Shared.Constants.UiThemeModes.Allowed">
+            <summary>Allowed values for validators and normalization.</summary>
+        </member>
+        <member name="M:Shared.Constants.UiThemeModes.Normalize(System.String)">
+            <summary>
+            Returns a canonical <c>light</c>/<c>dark</c> value, or <see cref="F:Shared.Constants.UiThemeModes.Light"/> when invalid.
+            </summary>
+        </member>
+        <member name="T:Shared.Constants.UspsScanAutoSettingKeys">
+            <summary>
+            Setting keys for automatic USPS track-scan push (PrintPackShip).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.AutoEnabled">
+            <summary>Master switch. Default false.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.DelayHours">
+            <summary>
+            Minimum age after <c>TrackingAddedAt</c> before an eligible USPS order may be auto-pushed.
+            Guards against pushing a track added seconds ago; the US business-hours window decides *when*.
+            Default 2; clamp 1–168.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.ChunkSize">
+            <summary>
+            Tracks per <c>PushAsync</c> call. Default 10.
+            <c>0</c> = send all eligible in one call (still split by PrintPackShip max if needed).
+            Clamp 0–100.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.IntervalMinutes">
+            <summary>
+            Minutes to wait after a full scan cycle finishes before the next.
+            Default 10; clamp 1–1440.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.WindowEnabled">
+            <summary>
+            Gate pushes on US post-office business hours. Default true.
+            When false only <see cref="F:Shared.Constants.UspsScanAutoSettingKeys.DelayHours"/> applies (legacy round-the-clock behaviour).
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.WeekdayStart">
+            <summary>Mon–Fri open clock, <c>HH:mm</c> US Eastern. Default <c>08:00</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.WeekdayEnd">
+            <summary>Mon–Fri close clock, <c>HH:mm</c> US Eastern. Default <c>17:00</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.SaturdayEnabled">
+            <summary>Whether Saturday morning counts as a push window. Default true.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.SaturdayStart">
+            <summary>Saturday open clock, <c>HH:mm</c> US Eastern. Default <c>08:00</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.SaturdayEnd">
+            <summary>Saturday close clock, <c>HH:mm</c> US Eastern. Default <c>12:00</c>.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.CutoffMarginMinutes">
+            <summary>
+            Stop pushing this many minutes before the window closes so the last batch still gets scanned.
+            Default 30; clamp 0–240.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.DefaultDelayHours">
+            <summary>Default minimum track age in hours.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.DefaultChunkSize">
+            <summary>Default chunk size (10 tracks per PushAsync).</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.DefaultIntervalMinutes">
+            <summary>Default interval minutes after each cycle.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.DefaultCutoffMarginMinutes">
+            <summary>Default cutoff margin before the window closes.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.HardCapPerCycle">
+            <summary>Hard ceiling on eligible ids queried per cycle (not a UI setting).</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanAutoSettingKeys.All">
+            <summary>All keys read by the auto-scan loop (single settings round-trip).</summary>
+        </member>
+        <member name="T:Shared.Constants.UspsScanSkipReasons">
+            <summary>
+            Stable skip codes when an order is excluded from a PrintPackShip USPS scan push.
+            Contract between backend and admin/seller UI for result Modals.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.NotFound">
+            <summary>Order id not found in DB.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.NotOwned">
+            <summary>Seller-scoped push: order belongs to another owner.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.NoTracking">
+            <summary>No resolvable carrier tracking number.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.NotUsps">
+            <summary>Order has no USPS last-mile signal.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.AlreadyPushed">
+            <summary>Already stamped with a successful scan batch.</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.DuplicateTracking">
+            <summary>Same tracking appears twice in the request (case-insensitive).</summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.PendingBatch">
+            <summary>
+            Tracking sits on a batch whose send result is unknown (timeout/5xx) —
+            pushing again would risk a double charge.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.AlreadyInTransit">
+            <summary>
+            Order already in transit or delivered — scan is only useful before the package moves.
+            </summary>
+        </member>
+        <member name="F:Shared.Constants.UspsScanSkipReasons.TerminalCommerce">
+            <summary>TikTok refund or cancelled — no reason to scan tracking.</summary>
+        </member>
+        <member name="T:Shared.Helpers.AppTimeZones">
+            <summary>
+            Canonical timezone contract:
+            <list type="bullet">
+            <item><description>DB / API wire: UTC instants (<c>timestamptz</c> / ISO-8601 with Z).</description></item>
+            <item><description>Business calendar + UI: <c>Asia/Ho_Chi_Minh</c>.</description></item>
+            <item><description>4Seller returned timestamps (createTime/paidTime/...): naive strings that are
+            already UTC — parsed with <see cref="M:Shared.Helpers.AppTimeZones.ParseFourSellerNaiveAsUtc(System.String)"/>.</description></item>
+            <item><description>4Seller order create-date FILTERS follow US business day
+            (<c>America/Los_Angeles</c>) — see <see cref="M:Shared.Helpers.AppTimeZones.ToPacificLocalRange(System.DateTime,System.DateTime)"/>.</description></item>
+            </list>
+            </summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.VietnamId">
+            <summary>IANA id for Vietnam business calendar.</summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.PacificId">
+            <summary>IANA id for 4Seller wall-clock / date filters.</summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.EasternId">
+            <summary>IANA id for US post-office business hours (USPS scan window anchor).</summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.Vietnam">
+            <summary>Resolved Vietnam timezone (IANA or Windows fallback).</summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.Pacific">
+            <summary>Resolved US Pacific timezone (IANA or Windows fallback).</summary>
+        </member>
+        <member name="F:Shared.Helpers.AppTimeZones.Eastern">
+            <summary>Resolved US Eastern timezone (IANA or Windows fallback).</summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.ParseFourSellerNaiveAsUtc(System.String)">
+            <summary>
+            Parses a 4Seller naive timestamp string (no offset). 4Seller returns these already in UTC,
+            so the wall-clock digits are taken as-is and tagged <see cref="F:System.DateTimeKind.Utc"/>.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.FormatFourSellerPacific(System.DateTime)">
+            <summary>
+            Formats a UTC instant as a naive Pacific wall-clock string for 4Seller payloads.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.ToPacificLocalRange(System.DateTime,System.DateTime)">
+            <summary>
+            Converts UTC bounds to Pacific wall-clock (for 4Seller date filters).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.ToVietnamLocalRange(System.DateTime,System.DateTime)">
+            <summary>
+            Converts UTC bounds to Vietnam wall-clock (for logs / business display).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.GetVietnamLookbackUtcRange(System.Int32,System.Int32)">
+            <summary>
+            UTC inclusive bounds for the last <paramref name="lookbackDays"/> Vietnam calendar days
+            (including today). Clamped to 1–<paramref name="maxDays"/> (default 31).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.GetVietnamDayUtcRange(System.DateOnly)">
+            <summary>
+            Inclusive UTC bounds for a single Vietnam calendar day (yyyy-MM-dd).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.AppTimeZones.EnsureUtc(System.DateTime)">
+            <summary>Normalizes a <see cref="T:System.DateTime"/> to UTC Kind for conversions.</summary>
+        </member>
+        <member name="T:Shared.Helpers.EgressProxyParser">
+            <summary>
+            Parses the proxy strings operators paste into settings (4Seller sellers, SHEIN fulfil
+            accounts) into a <see cref="T:System.Net.WebProxy"/>.
+            </summary>
+        </member>
+        <member name="F:Shared.Helpers.EgressProxyParser.DefaultScheme">
+            <summary>Default proxy scheme when the operator omits a <c>scheme://</c> prefix.</summary>
+        </member>
+        <member name="M:Shared.Helpers.EgressProxyParser.TryBuild(System.String,System.Net.WebProxy@)">
+            <summary>
+            Parses a proxy string. Accepted formats:
+            <list type="bullet">
+            <item><c>host:port</c> (IP-whitelisted, no auth)</item>
+            <item><c>host:port:user:pass</c> (colon-delimited auth)</item>
+            <item><c>[scheme://][user:pass@]host:port</c> (URL form)</item>
+            </list>
+            A leading <c>scheme://</c> (http/https/socks5/socks4/socks4a) may prefix any of the above;
+            scheme defaults to <see cref="F:Shared.Helpers.EgressProxyParser.DefaultScheme"/> (HTTP CONNECT tunnel for HTTPS targets; prefix <c>https://</c> for HTTPS proxy).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.EgressProxyParser.HasExplicitScheme(System.String)">
+            <summary>True when <paramref name="raw"/> includes an explicit <c>scheme://</c> prefix.</summary>
+        </member>
+        <member name="M:Shared.Helpers.EgressProxyParser.GetSchemeOrDefault(System.String)">
+            <summary>Returns the scheme from <paramref name="raw"/> or <see cref="F:Shared.Helpers.EgressProxyParser.DefaultScheme"/> when omitted.</summary>
+        </member>
+        <member name="M:Shared.Helpers.EgressProxyParser.WithScheme(System.String,System.String)">
+            <summary>Replaces or adds a <c>scheme://</c> prefix while preserving host/port/credentials.</summary>
+        </member>
+        <member name="T:Shared.Helpers.FulfilPin">
+            <summary>
+            Fulfil extension PIN (exactly 4 digits) — normalize, validate, HMAC-SHA256 hex hash.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.FulfilPin.Normalize(System.String)">
+            <summary>Trims whitespace; empty when null/whitespace.</summary>
+        </member>
+        <member name="M:Shared.Helpers.FulfilPin.IsValid(System.String)">
+            <summary>True when the value is exactly four decimal digits.</summary>
+        </member>
+        <member name="M:Shared.Helpers.FulfilPin.ComputeHash(System.String,System.String)">
+            <summary>
+            Deterministic HMAC-SHA256 of the PIN with the given pepper, hex lowercase (64 chars).
+            Used for unique-index lookup on PIN-only login.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.FulfilPin.PinRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>^\\d{4}$</code><br/>
+            Options:<br/>
+            <code>RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match if at the beginning of the string.<br/>
+            ○ Match a Unicode digit exactly 4 times.<br/>
+            ○ Match if at the end of the string or if before an ending newline.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:Shared.Helpers.ProfileNameComparer">
+            <summary>
+            Same profile-name ordering as admin Shops "Theo tên Profile" (asc):
+            split trailing digits, strip separators from prefix, compare prefix then numeric index.
+            Empty names always sort last.
+            </summary>
+        </member>
+        <member name="F:Shared.Helpers.ProfileNameComparer.Instance">
+            <summary>Shared singleton instance.</summary>
+        </member>
+        <member name="M:Shared.Helpers.ProfileNameComparer.Compare(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:Shared.Helpers.SheinSessionHeaderTextParser">
+             <summary>
+             Parses a pasted block of request headers into a dictionary.
+            
+             Chrome DevTools' "Copy request headers" produces exactly <c>name: value</c> per line, which is
+             what an operator has at hand when re-capturing a SHEIN session by hand. Accepting that shape
+             directly avoids the step where they hand-build JSON and typo a quote.
+             </summary>
+        </member>
+        <member name="M:Shared.Helpers.SheinSessionHeaderTextParser.Parse(System.String)">
+            <summary>
+            Reads <c>name: value</c> lines. Blank lines, <c>#</c> comments, HTTP request lines
+            (<c>GET /… HTTP/2</c>), pseudo-headers (<c>:authority</c>) and denied headers are dropped.
+            Later lines win, so pasting over a duplicated header behaves as expected.
+            </summary>
+        </member>
+        <member name="T:Shared.Helpers.SourceUrlKeyHelper">
+            <summary>
+            Normalizes product source URLs for scrape draft matching.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.Normalize(System.String)">
+            <summary>
+            Builds a stable key (Shein <c>-p-{id}</c> → <c>p:{id}</c>, else origin+path).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.CanonicalizeForCrawl(System.String)">
+            <summary>
+            Canonical product URL for 4Seller crawl: origin + path only (strip query/fragment).
+            Tracking params (e.g. Shein <c>?src_identifier=</c>) cause <c>data:[]</c> / delayed drafts.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.ExtractProductId(System.String)">
+            <summary>
+            Extracts Shein-style product id from a URL path (<c>-p-{digits}</c>), else null.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.ResolveSourceCode(System.String)">
+            <summary>
+            Resolves ProductSources code from a source URL host (SHEIN for shein.com).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.ProductIdRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>-p-(\\d+)</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase | RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match '-'.<br/>
+            ○ Match a character in the set [Pp].<br/>
+            ○ Match '-'.<br/>
+            ○ 1st capture group.<br/>
+                ○ Match a Unicode digit atomically at least once.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:Shared.Helpers.SourceUrlKeyHelper.HttpSchemeRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>https?://</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase | RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [Hh].<br/>
+            ○ Match a character in the set [Tt] exactly 2 times.<br/>
+            ○ Match a character in the set [Pp].<br/>
+            ○ Match a character in the set [Ss] atomically, optionally.<br/>
+            ○ Match the string "://".<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:Shared.Helpers.SupplierPdpMetrics">
+            <summary>
+            Parse / normalize supplier PDP metrics captured from source realtime JSON
+            (Shein <c>get_goods_detail_realtime_data</c>).
+            </summary>
+        </member>
+        <member name="F:Shared.Helpers.SupplierPdpMetrics.SheinUsStoreHome">
+            <summary>Canonical Shein US store home URL.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.BuildStoreUrl(System.String,System.String,System.String)">
+            <summary>Builds a stable store URL for a source platform + store code.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.IsShein(System.String)">
+            <summary>True when platform code / name refers to Shein.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizePlatform(System.String)">
+            <summary>Normalizes ProductSource.Code (trim, upper).</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.ParseShippingDayPercent(System.String)">
+            <summary>
+            Extracts percent from Shein SLA HTML/text
+            (prefer <c>dayPercentDesc</c>, e.g. <c>88% are ≤ 7 business days</c>).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.ParseShippingDaysFromDesc(System.String)">
+            <summary>
+            Extracts SLA days from <c>dayPercentDesc</c>, e.g. <c>≤ &lt;b&gt;7&lt;/b&gt; business days</c>.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.SumOnTimeDayPercents(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>
+            Sums Shein <c>dayPercents</c> buckets except overflow (<c>&gt;N business days</c>).
+            Example: 22+18+29+10+9 = 88 (skips <c>&gt;7</c> = 12).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeStock(System.Nullable{System.Int32})">
+            <summary>Non-negative stock, else null.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeReviewCount(System.Nullable{System.Int32})">
+            <summary>Non-negative review count, else null.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeRating(System.Nullable{System.Decimal})">
+            <summary>Rating 0–5 rounded to 2 decimals, else null.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.IsTruthyFlag(System.Object)">
+            <summary>
+            Truthy PDP flag: <c>true</c> / <c>1</c> / <c>"1"</c> / <c>"true"</c>.
+            SKU-level Shein <c>isSupportQuickShip</c> is often the string <c>"0"</c> — that is false.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.ParseIsLocalProduct(System.String,System.Object)">
+            <summary>
+            Local US stock: <c>localMadeTips</c> equals <c>Local</c> (case-insensitive),
+            else fallback <c>productInfo.isLocalProduct</c>.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.AggregateMallQuickShip(System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.Object}},System.String)">
+            <summary>
+            Product-level quick ship from <c>mall_stock.isSupportQuickShip</c> only —
+            never SKU-level <c>sku.isSupportQuickShip</c>.
+            Prefers rows whose <c>mall_code</c> matches <paramref name="selectedMallCode"/>;
+            if none match, ORs every mall.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.ParseStoreTitleFromSoldByTips(System.String)">
+            <summary>
+            Parses shop name from Shein <c>soldByTips</c>, e.g. <c>Sold by kcruab-kp</c> → <c>kcruab-kp</c>.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.ResolveStoreTitle(System.String,System.String)">
+            <summary>Prefers <paramref name="storeTitle"/>, else name parsed from <paramref name="soldByTips"/>.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeShopRank(System.Nullable{System.Decimal})">
+            <summary>Non-negative shop rank (not product rating 0–5).</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeStoreAttention(System.Nullable{System.Int32})">
+            <summary>Non-negative follower count, else null.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeShippingDays(System.Nullable{System.Int32})">
+            <summary>Positive shipping days, else null.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.NormalizeAbsoluteUrl(System.String,System.Int32)">
+            <summary>Makes protocol-relative image URLs absolute (<c>//cdn</c> → https).</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.Truncate(System.String,System.Int32)">
+            <summary>Truncates URL / tip text.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.InferPlatformFromUrl(System.String)">
+            <summary>Infers ProductSource.Code from URL host when options / client platform are missing.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.MatchPlatformFromDomains(System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{System.String,System.String}})">
+            <summary>Resolves ProductSource.Code from a source URL host vs configured domains.</summary>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.PercentRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>(\\d+(?:\\.\\d+)?)\\s*%</code><br/>
+            Options:<br/>
+            <code>RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ 1st capture group.<br/>
+                ○ Match a Unicode digit greedily at least once.<br/>
+                ○ Optional (greedy).<br/>
+                    ○ Match '.'.<br/>
+                    ○ Match a Unicode digit atomically at least once.<br/>
+            ○ Match a whitespace character atomically any number of times.<br/>
+            ○ Match '%'.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.SlaDaysRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>[≤&lt;=]\\s*(?:&lt;[^&gt;]*&gt;\\s*)*(\\d+)</code><br/>
+            Options:<br/>
+            <code>RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [&lt;=\u2264].<br/>
+            ○ Match a whitespace character greedily any number of times.<br/>
+            ○ Loop greedily any number of times.<br/>
+                ○ Match '&lt;'.<br/>
+                ○ Match a character other than '&gt;' atomically any number of times.<br/>
+                ○ Match '&gt;'.<br/>
+                ○ Match a whitespace character atomically any number of times.<br/>
+            ○ 1st capture group.<br/>
+                ○ Match a Unicode digit atomically at least once.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.BusinessDaysRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>(\\d+)\\s*(?:&lt;/b&gt;)?\\s*business\\s+days</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase | RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ 1st capture group.<br/>
+                ○ Match a Unicode digit greedily at least once.<br/>
+            ○ Match a whitespace character greedily any number of times.<br/>
+            ○ Optional (greedy).<br/>
+                ○ Match the string "&lt;/".<br/>
+                ○ Match a character in the set [Bb].<br/>
+                ○ Match '&gt;'.<br/>
+            ○ Match a whitespace character atomically any number of times.<br/>
+            ○ Match a character in the set [Bb].<br/>
+            ○ Match a character in the set [Uu].<br/>
+            ○ Match a character in the set [Ss].<br/>
+            ○ Match a character in the set [Ii].<br/>
+            ○ Match a character in the set [Nn].<br/>
+            ○ Match a character in the set [Ee].<br/>
+            ○ Match a character in the set [Ss] exactly 2 times.<br/>
+            ○ Match a whitespace character atomically at least once.<br/>
+            ○ Match a character in the set [Dd].<br/>
+            ○ Match a character in the set [Aa].<br/>
+            ○ Match a character in the set [Yy].<br/>
+            ○ Match a character in the set [Ss].<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="M:Shared.Helpers.SupplierPdpMetrics.SoldByTipsRegex">
+            <remarks>
+            Pattern:<br/>
+            <code>sold\\s+by\\s*[:\\-]?\\s*(.+)</code><br/>
+            Options:<br/>
+            <code>RegexOptions.IgnoreCase | RegexOptions.CultureInvariant</code><br/>
+            Explanation:<br/>
+            <code>
+            ○ Match a character in the set [Ss].<br/>
+            ○ Match a character in the set [Oo].<br/>
+            ○ Match a character in the set [Ll].<br/>
+            ○ Match a character in the set [Dd].<br/>
+            ○ Match a whitespace character atomically at least once.<br/>
+            ○ Match a character in the set [Bb].<br/>
+            ○ Match a character in the set [Yy].<br/>
+            ○ Match a whitespace character greedily any number of times.<br/>
+            ○ Match a character in the set [-:] greedily, optionally.<br/>
+            ○ Match a whitespace character greedily any number of times.<br/>
+            ○ 1st capture group.<br/>
+                ○ Match a character other than '\n' atomically at least once.<br/>
+            </code>
+            </remarks>
+        </member>
+        <member name="T:Shared.Helpers.TelegramSummarySchedule">
+            <summary>
+            Local-clock schedule for Telegram daily / seller summaries (Asia/Ho_Chi_Minh wall clock).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.TelegramSummarySchedule.TryParseLocalClock(System.String,System.Int32@,System.Int32@)">
+            <summary>
+            Parses <c>HH:mm</c> / <c>H:mm</c>, or legacy bare hour <c>0–23</c>. Defaults to 08:00 when invalid.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.TelegramSummarySchedule.IsLocalClockDue(System.DateTime,System.Int32,System.Int32)">
+            <summary>
+            True when local clock has reached today's scheduled hour:minute.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.TelegramSummarySchedule.TryResolveSummaryLocalDate(System.DateTime,System.Int32,System.Int32,System.String,System.DateTime@)">
+            <summary>
+            Picks which local calendar day to summarize.
+            Prefers today once the scheduled clock is reached; otherwise catch-up yesterday
+            if that slot was missed (critical for late schedules like 23:59 where the same-day
+            window is only ~1 minute before midnight).
+            </summary>
+            <returns>
+            <c>true</c> when a summary should be sent for <paramref name="summaryLocalDate"/>
+            (date at 00:00 local, <see cref="F:System.DateTimeKind.Unspecified"/>).
+            </returns>
+        </member>
+        <member name="T:Shared.Helpers.UspsScanWindowConfig">
+            <summary>
+            US post-office business-hours window for USPS track-scan pushes.
+            Clock values are US Eastern wall time (<see cref="F:Shared.Helpers.AppTimeZones.Eastern"/>) so the window keeps
+            the same business meaning across DST; VN display times are derived, never stored.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindowConfig.#ctor(System.Boolean,System.TimeOnly,System.TimeOnly,System.Boolean,System.TimeOnly,System.TimeOnly,System.Int32)">
+            <summary>
+            US post-office business-hours window for USPS track-scan pushes.
+            Clock values are US Eastern wall time (<see cref="F:Shared.Helpers.AppTimeZones.Eastern"/>) so the window keeps
+            the same business meaning across DST; VN display times are derived, never stored.
+            </summary>
+        </member>
+        <member name="T:Shared.Helpers.UspsScanWindow">
+            <summary>
+            Pure window math: is the US post office open right now, and when does it open next.
+            </summary>
+        </member>
+        <member name="F:Shared.Helpers.UspsScanWindow.LookaheadDays">
+            <summary>Days scanned ahead by <see cref="M:Shared.Helpers.UspsScanWindow.NextOpenUtc(System.DateTime,Shared.Helpers.UspsScanWindowConfig)"/> (covers a full closed week).</summary>
+        </member>
+        <member name="F:Shared.Helpers.UspsScanWindow.DefaultWeekdayStart">
+            <summary>Default weekday window 08:00–17:00 ET.</summary>
+        </member>
+        <member name="F:Shared.Helpers.UspsScanWindow.DefaultWeekdayEnd">
+            <summary>Default weekday close 17:00 ET.</summary>
+        </member>
+        <member name="F:Shared.Helpers.UspsScanWindow.DefaultSaturdayStart">
+            <summary>Default Saturday window 08:00–12:00 ET.</summary>
+        </member>
+        <member name="F:Shared.Helpers.UspsScanWindow.DefaultSaturdayEnd">
+            <summary>Default Saturday close 12:00 ET.</summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.IsOpen(System.DateTime,Shared.Helpers.UspsScanWindowConfig)">
+            <summary>
+            True when <paramref name="utcNow"/> falls inside the configured Eastern window,
+            after subtracting the cutoff margin from the close time.
+            Always true when the window gate is disabled.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.NextOpenUtc(System.DateTime,Shared.Helpers.UspsScanWindowConfig)">
+            <summary>
+            Next UTC instant the window is open. Returns <paramref name="utcNow"/> when already open,
+            and <c>null</c> when every day is closed (all days off, or cutoff margin swallows the window).
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.ParseClock(System.String,System.TimeOnly)">
+            <summary>
+            Parses <c>HH:mm</c> / <c>H:mm</c>, or a bare hour <c>0–23</c>. Falls back to
+            <paramref name="fallback"/> when the value is missing or malformed.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.FormatClock(System.TimeOnly)">
+            <summary>Formats a clock for setting storage / logs (<c>HH:mm</c>).</summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.TryResolveEffectiveWindow(System.DayOfWeek,Shared.Helpers.UspsScanWindowConfig,System.TimeOnly@,System.TimeSpan@)">
+            <summary>
+            Window for a given Eastern weekday, with the cutoff margin already applied to the close time.
+            Sunday is always closed; Saturday follows its own toggle and clocks.
+            </summary>
+        </member>
+        <member name="M:Shared.Helpers.UspsScanWindow.ToUtc(System.DateTime)">
+            <summary>
+            Eastern wall clock to UTC. DST gaps shift forward past the missing hour; ambiguous
+            (repeated) local times take the first, daylight-offset occurrence.
+            </summary>
+        </member>
+        <member name="T:Shared.Models.ApiResponse`1">
+            <summary>
+            Standard API response wrapper.
+            </summary>
+            <typeparam name="T">Response data type.</typeparam>
+        </member>
+        <member name="P:Shared.Models.ApiResponse`1.Success">
+            <summary>
+            Indicates whether the request succeeded.
+            </summary>
+        </member>
+        <member name="P:Shared.Models.ApiResponse`1.Message">
+            <summary>
+            Human-readable message.
+            </summary>
+        </member>
+        <member name="P:Shared.Models.ApiResponse`1.Data">
+            <summary>
+            Response payload.
+            </summary>
+        </member>
+        <member name="P:Shared.Models.ApiResponse`1.Errors">
+            <summary>
+            Validation or business errors.
+            </summary>
+        </member>
+        <member name="M:Shared.Models.ApiResponse`1.Ok(`0,System.String)">
+            <summary>
+            Creates a successful response.
+            </summary>
+        </member>
+        <member name="M:Shared.Models.ApiResponse`1.Fail(System.String,System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary>
+            Creates a failed response.
+            </summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the CustomValueRejectionRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.CustomValueRejectionRegex_0.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the NonAlphaNumRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.NonAlphaNumRegex_1.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PinRegex_2">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the PinRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.PinRegex_2.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PinRegex_2.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PinRegex_2.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProductIdRegex_3">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the ProductIdRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.ProductIdRegex_3.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProductIdRegex_3.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.ProductIdRegex_3.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the HttpSchemeRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.HttpSchemeRegex_4.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PercentRegex_5">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the PercentRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.PercentRegex_5.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PercentRegex_5.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.PercentRegex_5.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SlaDaysRegex_6">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the SlaDaysRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SlaDaysRegex_6.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the BusinessDaysRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.BusinessDaysRegex_7.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8">
+            <summary>Custom <see cref="T:System.Text.RegularExpressions.Regex"/>-derived type for the SoldByTipsRegex method.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.Instance">
+            <summary>Cached, thread-safe singleton instance.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.#ctor">
+            <summary>Initializes the instance.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory">
+            <summary>Provides a factory for creating <see cref="T:System.Text.RegularExpressions.RegexRunner"/> instances to be used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory.CreateInstance">
+            <summary>Creates an instance of a <see cref="T:System.Text.RegularExpressions.RegexRunner"/> used by methods on <see cref="T:System.Text.RegularExpressions.Regex"/>.</summary>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory.Runner">
+            <summary>Provides the runner that contains the custom logic implementing the specified regular expression.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory.Runner.Scan(System.ReadOnlySpan{System.Char})">
+            <summary>Scan the <paramref name="inputSpan"/> starting from base.runtextstart for the next match.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory.Runner.TryFindNextPossibleStartingPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Search <paramref name="inputSpan"/> starting from base.runtextpos for the next location a match could possibly start.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if a possible match was found; false if no more matches are possible.</returns>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.SoldByTipsRegex_8.RunnerFactory.Runner.TryMatchAtCurrentPosition(System.ReadOnlySpan{System.Char})">
+            <summary>Determine whether <paramref name="inputSpan"/> at base.runtextpos is a match for the regular expression.</summary>
+            <param name="inputSpan">The text being scanned by the regular expression.</param>
+            <returns>true if the regular expression matches at the current position; otherwise, false.</returns>
+        </member>
+        <member name="T:System.Text.RegularExpressions.Generated.Utilities">
+            <summary>Helper methods used by generated <see cref="T:System.Text.RegularExpressions.Regex"/>-derived implementations.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout">
+            <summary>Default timeout value set in <see cref="T:System.AppContext"/>, or <see cref="F:System.Text.RegularExpressions.Regex.InfiniteMatchTimeout"/> if none was set.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_hasTimeout">
+            <summary>Whether <see cref="F:System.Text.RegularExpressions.Generated.Utilities.s_defaultTimeout"/> is non-infinite.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.Utilities.IndexOfAnyDigit(System.ReadOnlySpan{System.Char})">
+            <summary>Finds the next index of any character that matches a Unicode digit.</summary>
+        </member>
+        <member name="M:System.Text.RegularExpressions.Generated.Utilities.StackPush(System.Int32[]@,System.Int32@,System.Int32,System.Int32)">
+            <summary>Pushes 2 values onto the backtracking stack.</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_asciiExceptDigits">
+            <summary>Supports searching for characters in or not in "\0\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !\"#$%&amp;'()*+,-./:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u007f".</summary>
+        </member>
+        <member name="F:System.Text.RegularExpressions.Generated.Utilities.s_nonAscii_46E3FAA2E94950B9D41E9AB1B570CAB55D04A30009110072B4BC074D57272527">
+            <summary>Supports searching for characters in or not in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzK".</summary>
+        </member>
+    </members>
+</doc>

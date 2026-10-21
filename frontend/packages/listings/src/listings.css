@@ -1,0 +1,449 @@
+/* Listings list + BindCategoryModal — surfaces/borders/text Ant Design tokens don't cover.
+   Vars on :root so Modal/Popover portals (outside page tree) still inherit. */
+
+:root {
+  --listing-surface: var(--app-surface);
+  --listing-surface-muted: var(--app-surface-muted);
+  --listing-surface-subtle: var(--app-surface-subtle);
+  --listing-surface-selected: var(--app-surface-selected);
+  --listing-border: var(--app-border);
+  --listing-text: var(--app-text);
+  --listing-text-secondary: var(--app-text-secondary);
+  --listing-text-tertiary: var(--app-text-tertiary);
+  --listing-text-quaternary: var(--app-text-quaternary);
+  --listing-money: #531dab;
+  --listing-thumb-bg: var(--app-surface-subtle);
+  --listing-line-h: var(--app-line-h);
+  --listing-line-gap: var(--app-line-gap);
+  --listing-thumb-size: var(--app-thumb-size);
+  --listing-spin-overlay: rgba(255, 255, 255, 0.55);
+  --listing-error-bg: #fff0f6;
+  --listing-error-border: #eb2f96;
+  --listing-star-empty: #e8e8e8;
+}
+
+html[data-theme='dark'] {
+  --listing-money: #b37feb;
+  --listing-spin-overlay: rgba(0, 0, 0, 0.45);
+  --listing-error-bg: rgba(235, 47, 150, 0.14);
+  --listing-error-border: rgba(235, 47, 150, 0.45);
+  --listing-star-empty: #595959;
+}
+
+html[data-theme='dark'] .admin-card-grid > .admin-col-meta {
+  border-top-color: var(--listing-border);
+}
+
+.listing-list-header {
+  display: grid;
+  gap: 12px;
+  padding: 6px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--listing-text-tertiary);
+  border-bottom: 1px solid var(--listing-border);
+  align-items: center;
+}
+
+.listing-list-header-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.listing-card-body {
+  display: grid;
+  column-gap: 12px;
+  padding: 6px 12px;
+  align-items: start;
+}
+
+.listing-card-product {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.listing-card-lines,
+.listing-card-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--listing-line-gap);
+  height: var(--listing-thumb-size);
+}
+
+.listing-card-lines {
+  flex: 1;
+}
+
+.listing-card-line {
+  height: var(--listing-line-h);
+  line-height: var(--listing-line-h);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--listing-text-secondary);
+}
+
+.listing-card-line--title,
+.listing-card-line--primary {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--listing-text);
+}
+
+a.listing-card-line--title {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.listing-card-line--title:hover {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+.listing-card-line--title-no-source {
+  color: var(--ant-color-warning, #faad14);
+}
+
+.listing-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: var(--listing-line-h);
+}
+
+.listing-card-title-row .listing-card-line--title {
+  flex: 1;
+  min-width: 0;
+}
+
+.listing-card-title-edit.ant-btn {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--listing-text-tertiary);
+  opacity: 0;
+}
+
+.listing-card-title-row:hover .listing-card-title-edit.ant-btn,
+.listing-card-title-row:focus-within .listing-card-title-edit.ant-btn,
+.listing-card-title-edit.ant-btn.is-open,
+.listing-card-title-edit.ant-btn:focus-visible {
+  opacity: 1;
+}
+
+.listing-card-title-edit.ant-btn:hover {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+@media (hover: none) {
+  .listing-card-title-edit.ant-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.listing-source-url-pop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(360px, 80vw);
+}
+
+.listing-source-url-pop .ant-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.listing-card-line--row {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.listing-card-label {
+  color: var(--listing-text-tertiary);
+}
+
+.listing-card-value {
+  color: var(--listing-text);
+}
+
+.listing-card-variant-btn.ant-btn {
+  padding: 0;
+  height: var(--listing-line-h);
+  font-size: 12px;
+  line-height: var(--listing-line-h);
+}
+
+.listing-card-mobile-extra {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: var(--listing-line-h);
+  color: var(--listing-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.listing-supplier-shop:has(.listing-card-mobile-extra) .listing-supplier-flags {
+  margin-left: 0;
+}
+
+.listing-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--listing-thumb-size);
+  height: var(--listing-thumb-size);
+  line-height: 0;
+}
+
+.listing-thumb-index {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 4px 0 4px 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 15px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.listing-card-line .listing-rating {
+  margin-top: 0;
+}
+
+.listing-supplier-shop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  height: var(--listing-line-h);
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.listing-store-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.listing-supplier-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.listing-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 140px;
+  color: #08979c;
+  text-decoration: none;
+  flex: 0 1 auto;
+}
+
+a.listing-store:hover,
+a.listing-store:hover .listing-store-title {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+a.listing-store:hover .listing-store-title {
+  text-decoration: underline;
+}
+
+.listing-store-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  color: #08979c;
+  line-height: var(--listing-line-h);
+}
+
+.listing-supplier-stats {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--listing-text-tertiary);
+  font-size: 11px;
+}
+
+.listing-supplier-stats > * + *::before {
+  content: '·';
+  margin: 0 4px;
+  color: var(--listing-text-quaternary);
+}
+
+.listing-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.listing-stat-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.listing-stat--rank {
+  color: #0958d9;
+}
+
+.listing-stat--follow {
+  color: #531dab;
+}
+
+.listing-ship-sla {
+  font-size: 11px;
+  color: #007d49;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: var(--listing-line-h);
+}
+
+.listing-ship-badge {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.listing-ship-badge--local {
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.listing-ship-badge--quick {
+  color: #d46b08;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+}
+
+html[data-theme='dark'] .listing-store,
+html[data-theme='dark'] .listing-store-title {
+  color: #36cfc9;
+}
+
+html[data-theme='dark'] .listing-stat--rank {
+  color: #69b1ff;
+}
+
+html[data-theme='dark'] .listing-stat--follow {
+  color: #b37feb;
+}
+
+html[data-theme='dark'] .listing-ship-sla {
+  color: #3dcc8a;
+}
+
+html[data-theme='dark'] .listing-ship-badge--local {
+  color: #95de64;
+  background: rgba(82, 196, 26, 0.16);
+  border-color: rgba(135, 208, 104, 0.45);
+}
+
+html[data-theme='dark'] .listing-ship-badge--quick {
+  color: #ffc069;
+  background: rgba(250, 140, 22, 0.16);
+  border-color: rgba(255, 192, 105, 0.4);
+}
+
+.listing-ship-badge--recommended {
+  color: #0958d9;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+}
+
+html[data-theme='dark'] .listing-ship-badge--recommended {
+  color: #69b1ff;
+  background: rgba(22, 119, 255, 0.16);
+  border-color: rgba(105, 177, 255, 0.4);
+}
+
+/* Compact sync-error strip under listing card */
+.listing-sync-error-alert.ant-alert {
+  padding: 2px 8px;
+  align-items: center;
+  min-height: 0;
+}
+
+.listing-sync-error-alert .ant-alert-icon {
+  margin-inline-end: 6px;
+  margin-top: 0;
+  align-self: center;
+  line-height: 1;
+}
+
+.listing-sync-error-alert .ant-alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.listing-sync-error-alert .ant-alert-message,
+.listing-sync-error-alert .ant-alert-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.listing-sync-error-alert__text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listing-sync-error-alert .ant-alert-action {
+  margin-inline-start: 8px;
+  margin-top: 0;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.listing-sync-error-alert .ant-alert-action .ant-btn {
+  height: 20px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 20px;
+}

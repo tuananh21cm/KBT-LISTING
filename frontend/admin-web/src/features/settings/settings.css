@@ -1,0 +1,93 @@
+/* Settings cards + create/edit modal — form labels / portals Ant Design tokens don't always cover.
+   Vars on :root so Modal/Popconfirm/Select/Tooltip portals inherit. */
+
+:root {
+  --settings-surface: var(--app-surface);
+  --settings-surface-muted: var(--app-surface-muted);
+  --settings-border: var(--app-border);
+  --settings-text: var(--app-text);
+  --settings-text-secondary: var(--app-text-secondary);
+  --settings-text-tertiary: var(--app-text-tertiary);
+}
+
+.settings-info-icon {
+  color: var(--settings-text-tertiary);
+  font-size: 12px;
+}
+
+/* Create/edit modal: labels, extras, validation explain */
+.settings-edit-modal .ant-form-item-label > label,
+.settings-edit-modal .ant-form-item-extra {
+  color: var(--settings-text-secondary);
+}
+
+.settings-edit-modal .ant-form-item-explain,
+.settings-edit-modal .ant-form-item-additional {
+  color: var(--settings-text-tertiary);
+}
+
+/* Disabled key input stays readable on dark elevated surface */
+.settings-edit-modal .ant-input-disabled,
+.settings-edit-modal .ant-input[disabled] {
+  color: var(--settings-text-secondary);
+}
+
+/* Select group/type/SHEIN unit dropdowns + Popconfirm / Tooltip portals */
+html[data-theme='dark'] .ant-select-dropdown {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-active,
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected {
+  background: rgba(22, 119, 255, 0.2);
+  color: #69b1ff;
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  font-weight: 600;
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-empty-description {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-inner {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-title,
+html[data-theme='dark'] .ant-popover .ant-popover-inner-content {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::before,
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::after {
+  background: #3a3a3a;
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-inner {
+  background: #3a3a3a;
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::before,
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::after {
+  background: #3a3a3a;
+}
+
+/* InputNumber addon (Lookback "ngày") */
+html[data-theme='dark'] .ant-input-number-group-addon {
+  background: #3a3a3a;
+  border-color: #424242;
+  color: rgba(255, 255, 255, 0.65);
+}

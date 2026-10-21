@@ -1,0 +1,20 @@
+{
+  "name": "@drop/utils",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./datetime": "./src/datetime.ts",
+    "./pagination": "./src/pagination.ts",
+    "./totp": "./src/totp.ts",
+    "./sheinSupplierStatus": "./src/sheinSupplierStatus.ts",
+    "./profileNameSort": "./src/profileNameSort.ts"
+  },
+  "files": ["src"],
+  "peerDependencies": {
+    "antd": "^6.0.0",
+    "dayjs": "^1.11.0",
+    "otpauth": "^9.0.0"
+  }
+}

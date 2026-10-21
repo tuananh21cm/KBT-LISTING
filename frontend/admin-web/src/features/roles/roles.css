@@ -1,0 +1,87 @@
+/* Roles page + create modal — form labels / Alert / portals Ant tokens don't always cover.
+   Vars on :root so Modal / Popconfirm / Tooltip portals inherit. */
+
+:root {
+  --roles-surface: var(--app-surface);
+  --roles-surface-muted: var(--app-surface-muted);
+  --roles-border: var(--app-border);
+  --roles-text: var(--app-text);
+  --roles-text-secondary: var(--app-text-secondary);
+  --roles-text-tertiary: var(--app-text-tertiary);
+  --roles-warning-bg: #fffbe6;
+  --roles-warning-border: #ffe58f;
+  --roles-warning-fg: #d48806;
+}
+
+html[data-theme='dark'] {
+  --roles-warning-bg: rgba(250, 173, 20, 0.12);
+  --roles-warning-border: rgba(250, 173, 20, 0.4);
+  --roles-warning-fg: #ffc53d;
+}
+
+/* Create role modal: labels, hint extras, validation explain */
+.roles-edit-modal .ant-form-item-label > label,
+.roles-edit-modal .ant-form-item-extra {
+  color: var(--roles-text-secondary);
+}
+
+.roles-edit-modal .ant-form-item-explain,
+.roles-edit-modal .ant-form-item-additional {
+  color: var(--roles-text-tertiary);
+}
+
+/* Admin seed warning */
+.roles-alert.ant-alert-warning {
+  background: var(--roles-warning-bg);
+  border: 1px solid var(--roles-warning-border);
+}
+
+.roles-alert.ant-alert-warning .ant-alert-title,
+.roles-alert.ant-alert-warning .ant-alert-message,
+.roles-alert.ant-alert-warning .ant-alert-icon {
+  color: var(--roles-warning-fg);
+}
+
+.roles-alert .ant-alert-description {
+  color: var(--roles-text-secondary);
+}
+
+/* Permission group blocks — subtle separator on dark surfaces */
+.roles-perm-group {
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--roles-border);
+}
+
+.roles-perm-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Popconfirm delete + Tooltip "Thêm vai trò" portals */
+html[data-theme='dark'] .ant-popover .ant-popover-inner {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-title,
+html[data-theme='dark'] .ant-popover .ant-popover-inner-content {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::before,
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::after {
+  background: #3a3a3a;
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-inner {
+  background: #3a3a3a;
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::before,
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::after {
+  background: #3a3a3a;
+}

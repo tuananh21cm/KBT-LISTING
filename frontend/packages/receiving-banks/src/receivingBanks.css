@@ -1,0 +1,634 @@
+/* Receiving banks list + view/edit modals — surfaces Ant Design tokens don't always cover
+   (Descriptions bordered label cells, form labels).
+   Vars on :root so Modal/Popconfirm portals inherit. */
+
+:root {
+  --rb-surface: var(--app-surface);
+  --rb-surface-muted: var(--app-surface-muted);
+  --rb-surface-subtle: var(--app-surface-subtle);
+  --rb-border: var(--app-border);
+  --rb-text: var(--app-text);
+  --rb-text-secondary: var(--app-text-secondary);
+  --rb-text-tertiary: var(--app-text-tertiary);
+  --rb-amount-credit: var(--app-amount-credit);
+  --rb-amount-debit: var(--app-amount-debit);
+  --rb-mismatch-fg: #d46b08;
+  --rb-mismatch-bg: rgba(250, 173, 20, 0.14);
+  --rb-status-pending: #d46b08;
+  --rb-status-confirmed: #52c41a;
+  --rb-status-rejected: #ff4d4f;
+}
+
+html[data-theme='dark'] {
+  --rb-mismatch-fg: #faad14;
+  --rb-mismatch-bg: rgba(250, 173, 20, 0.16);
+  --rb-status-pending: #faad14;
+  --rb-status-confirmed: #73d13d;
+  --rb-status-rejected: #ff7875;
+}
+
+.rb-amount-credit {
+  color: var(--rb-amount-credit);
+}
+
+.rb-amount-debit {
+  color: var(--rb-amount-debit);
+}
+
+.rb-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 12px;
+  row-gap: 0;
+}
+
+.rb-form-grid-full {
+  grid-column: 1 / -1;
+}
+
+.rb-form-item-inline.ant-form-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.rb-form-item-inline .ant-form-item-label {
+  padding: 0 !important;
+}
+
+.rb-form-item-inline .ant-form-item-control {
+  flex: none;
+}
+
+@media (max-width: 576px) {
+  .rb-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Compact create/edit modal: tighter vertical rhythm for 2-col layout */
+.rb-edit-modal .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.rb-edit-modal .ant-form-item-label {
+  padding-bottom: 2px !important;
+}
+
+/* View modal: Descriptions bordered cells match dark/light palette */
+.rb-view-descriptions.ant-descriptions-bordered .ant-descriptions-view {
+  border-color: var(--rb-border) !important;
+}
+
+.rb-view-descriptions.ant-descriptions-bordered .ant-descriptions-row > th,
+.rb-view-descriptions.ant-descriptions-bordered .ant-descriptions-row > td {
+  border-color: var(--rb-border) !important;
+}
+
+.rb-view-descriptions.ant-descriptions-bordered .ant-descriptions-item-label {
+  background: var(--rb-surface-muted) !important;
+  color: var(--rb-text-secondary) !important;
+}
+
+.rb-view-descriptions.ant-descriptions-bordered .ant-descriptions-item-content {
+  background: var(--rb-surface) !important;
+  color: var(--rb-text) !important;
+}
+
+/* Copyable text only — keep icon/text readable on dark surfaces */
+.rb-view-descriptions .ant-typography,
+.rb-view-descriptions .ant-typography-copy,
+.rb-view-descriptions .ant-typography-copy-success {
+  color: var(--rb-text) !important;
+}
+
+/* Create/edit modals: form labels match secondary text token */
+.rb-edit-modal .ant-form-item-label > label,
+.rb-edit-modal .ant-form-item-extra {
+  color: var(--rb-text-secondary);
+}
+
+.rb-edit-modal .ant-form-item-explain,
+.rb-edit-modal .ant-form-item-additional {
+  color: var(--rb-text-tertiary);
+}
+
+.rb-edit-hint {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.rb-edit-modal.is-mobile .rb-edit-hint {
+  font-size: 12px;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+/* Shop select: platform icon + label + status badge vertically centered */
+.rb-shop-select.ant-select-sm,
+.rb-shop-select.ant-select-outlined {
+  min-height: 28px;
+}
+
+.rb-shop-select:not(.ant-select-sm) .ant-select-selector {
+  min-height: 32px !important;
+}
+
+.rb-shop-select:not(.ant-select-sm) .ant-select-content,
+.rb-shop-select:not(.ant-select-sm) .ant-select-selection-wrap {
+  min-height: 30px;
+}
+
+.rb-shop-select:not(.ant-select-sm) .rb-shop-option {
+  height: 24px;
+}
+
+.rb-shop-select .ant-select-selector {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 28px !important;
+  height: auto !important;
+  padding-block: 0 !important;
+}
+
+.rb-shop-select .ant-select-content,
+.rb-shop-select .ant-select-selection-wrap,
+.rb-shop-select .ant-select-selection-overflow {
+  display: flex !important;
+  align-items: center !important;
+  height: 100%;
+  min-height: 26px;
+}
+
+.rb-shop-select .ant-select-selection-item {
+  display: flex !important;
+  align-items: center !important;
+  inset-block-start: 0 !important;
+  inset-inline-end: 22px !important;
+  transform: none !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  height: auto !important;
+  max-width: calc(100% - 8px);
+}
+
+.rb-shop-select .ant-select-selection-search {
+  display: flex;
+  align-items: center;
+}
+
+.rb-shop-select-dropdown .ant-select-item-option {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.rb-shop-select-dropdown .ant-select-item-option-content {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+.rb-shop-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  line-height: 1;
+  height: 22px;
+}
+
+.rb-shop-option-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  line-height: 0;
+}
+
+.rb-shop-option-avatar .ant-avatar {
+  display: block !important;
+  vertical-align: top;
+}
+
+.rb-shop-option-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 20px;
+}
+
+.rb-shop-option-status.ant-tag {
+  margin: 0 !important;
+  flex-shrink: 0;
+  line-height: 16px !important;
+  height: 18px !important;
+  padding-inline: 5px !important;
+  font-size: 11px !important;
+  border-radius: 4px;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* PingPongX bulk import modal */
+.rb-import-upload {
+  margin: 8px 0 16px;
+}
+
+.rb-import-upload-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rb-import-preview {
+  margin-top: 4px;
+}
+
+.rb-import-row-error td {
+  background: color-mix(in srgb, #ff4d4f 8%, transparent) !important;
+}
+
+html[data-theme='dark'] .rb-import-row-error td {
+  background: color-mix(in srgb, #ff4d4f 16%, transparent) !important;
+}
+
+.rb-tag-compact.ant-tag {
+  margin: 0 !important;
+  padding-inline: 5px !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  height: 18px !important;
+  border-radius: 4px;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.rb-txn-actions .ant-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.rb-txn-actions .rb-txn-status-swap.is-orange {
+  color: var(--rb-status-pending) !important;
+}
+
+.rb-txn-actions .rb-txn-status-swap.is-green {
+  color: var(--rb-status-confirmed) !important;
+}
+
+.rb-txn-actions .rb-txn-status-swap.is-red {
+  color: var(--rb-status-rejected) !important;
+}
+
+.rb-txn-status-menu .ant-dropdown-menu-item {
+  padding-inline: 10px;
+}
+
+.rb-txn-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rb-txn-status-item .anticon {
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.rb-txn-status-item .is-off {
+  visibility: hidden;
+}
+
+.rb-txn-status-menu .ant-dropdown-menu-item .rb-txn-status-item.is-orange {
+  color: var(--rb-status-pending);
+}
+
+.rb-txn-status-menu .ant-dropdown-menu-item .rb-txn-status-item.is-green {
+  color: var(--rb-status-confirmed);
+}
+
+.rb-txn-status-menu .ant-dropdown-menu-item .rb-txn-status-item.is-red {
+  color: var(--rb-status-rejected);
+}
+
+.rb-txn-page.is-mobile {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch > td {
+  background: var(--rb-mismatch-bg);
+  color: var(--rb-mismatch-fg);
+}
+
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch:hover > td,
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch.ant-table-row-hover > td {
+  background: var(--rb-mismatch-bg);
+  color: var(--rb-mismatch-fg);
+}
+
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch .ant-typography,
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch .rb-amount-credit,
+.rb-txn-page:not(.is-mobile) .ant-table-tbody > tr.rb-txn-row-mismatch .rb-amount-debit {
+  color: var(--rb-mismatch-fg) !important;
+}
+
+.rb-txn-mobile-table.ant-table-wrapper,
+.rb-txn-mobile-table .ant-spin-nested-loading,
+.rb-txn-mobile-table .ant-spin-container,
+.rb-txn-mobile-table .ant-table,
+.rb-txn-mobile-table .ant-table-container,
+.rb-txn-mobile-table .ant-table-content,
+.rb-txn-mobile-table table {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  background: transparent;
+}
+
+.rb-txn-mobile-table .ant-table-container,
+.rb-txn-mobile-table .ant-table-content,
+.rb-txn-mobile-table .ant-table-body {
+  overflow: visible !important;
+}
+
+.rb-txn-mobile-table table {
+  table-layout: fixed;
+}
+
+.rb-txn-mobile-table .ant-table {
+  font-size: 12px;
+}
+
+.rb-txn-mobile-table .ant-table-tbody > tr > td {
+  padding: 0 0 8px !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  white-space: normal;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.rb-txn-mobile-table .ant-table-tbody > tr:last-child > td {
+  padding-bottom: 0 !important;
+}
+
+.rb-txn-mobile-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: transparent !important;
+}
+
+.rb-txn-mobile-table .ant-pagination {
+  max-width: 100%;
+}
+
+.rb-txn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: var(--rb-surface);
+  border: 1px solid var(--rb-border);
+  line-height: 1.3;
+}
+
+.rb-txn-card.is-mismatch {
+  border-color: var(--rb-mismatch-fg);
+  background: var(--rb-mismatch-bg);
+  color: var(--rb-mismatch-fg);
+}
+
+.rb-txn-card.is-mismatch .rb-txn-card-top {
+  background: transparent;
+  border-bottom-color: var(--rb-mismatch-fg);
+}
+
+.rb-txn-card.is-mismatch .ant-typography,
+.rb-txn-card.is-mismatch .rb-amount-credit,
+.rb-txn-card.is-mismatch .rb-amount-debit,
+.rb-txn-card.is-mismatch .rb-txn-card-shop,
+.rb-txn-card.is-mismatch .rb-txn-card-time,
+.rb-txn-card.is-mismatch .rb-txn-card-note,
+.rb-txn-card.is-mismatch .rb-txn-card-meta {
+  color: var(--rb-mismatch-fg) !important;
+}
+
+.rb-txn-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  padding: 2px 12px;
+  background: var(--rb-surface-muted);
+  border-bottom: 1px solid var(--rb-border);
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.rb-txn-card-top .rb-amount-credit,
+.rb-txn-card-top .rb-amount-debit,
+.rb-txn-card-top .rb-amount-credit.ant-typography,
+.rb-txn-card-top .rb-amount-debit.ant-typography {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  margin: 0;
+}
+
+.rb-txn-card-shop,
+.rb-txn-card-shop.ant-typography {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--rb-text);
+}
+
+.rb-txn-card-time,
+.rb-txn-card-time.ant-typography {
+  font-size: 12px;
+  line-height: 1;
+  margin: 0;
+  color: var(--rb-text-tertiary);
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rb-txn-card-note {
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px 10px 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--rb-text-secondary);
+}
+
+.rb-txn-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 32px;
+  padding: 2px 6px 2px 10px;
+}
+
+.rb-txn-card-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.rb-txn-card-info .rb-txn-card-meta,
+.rb-txn-card-info .rb-txn-card-meta.ant-typography {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--rb-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rb-txn-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.rb-txn-card-foot .rb-txn-actions {
+  flex-shrink: 0;
+}
+
+.rb-txn-card-foot .rb-txn-actions .ant-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.rb-edit-modal.is-mobile .ant-form-item {
+  margin-bottom: 10px;
+}
+
+.rb-payout-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rb-payout-mobile-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.rb-payout-mobile-count {
+  color: var(--rb-text-secondary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.rb-payout-mobile-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--rb-surface-muted);
+  border: 1px solid var(--rb-border);
+}
+
+.rb-payout-mobile-totals > span,
+.rb-payout-order-metrics > span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--rb-text);
+}
+
+.rb-payout-metric-label {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--rb-text-tertiary);
+}
+
+.rb-payout-order-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--rb-surface);
+  border: 1px solid var(--rb-border);
+}
+
+.rb-payout-order-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rb-payout-order-id {
+  font-size: 12px !important;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-payout-order-date {
+  font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.rb-payout-order-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+}

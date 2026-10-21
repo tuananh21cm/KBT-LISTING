@@ -1,0 +1,39 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+# Node
+node_modules/
+dist/
+*.local
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+appsettings.Development.json
+!appsettings.Development.example.json
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Docker
+.docker/
+
+# Scratch / local check outputs (contain real config copies)
+.tmp/
+backend/artifacts/

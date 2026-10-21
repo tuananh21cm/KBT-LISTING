@@ -1,0 +1,83 @@
+---
+description: Typography, icon size, and list chrome — mọi trang admin/seller khớp ListingsPage
+globs: frontend/packages/**/*.{css,tsx},frontend/admin-web/**/*.{css,tsx},frontend/seller-web/**/*.{css,tsx}
+alwaysApply: false
+---
+
+# UI style (chuẩn ListingsPage)
+
+Nguồn sự thật: `PageHeader` + `frontend/packages/theme/src/app.css` (`--app-*`, `.app-list-*`) + `antdTheme.ts` (`APP_FONT_SIZE = 12`, `componentSize="small"`, controlHeight **24**). Tham chiếu visual: `ListingsPage`. Không bịa scale mới.
+
+## Thang chữ / đậm (không 13px, không 14px trên list)
+
+| Vai trò | Size | Weight | Ghi chú |
+|---|---|---|---|
+| Title trang | 16px | 600 | Chỉ `PageHeader` — đừng `Title` level khác |
+| Body / control / Table | 12px | 400 | Inter; inherit theme, đừng override |
+| Primary trong list | 12px | 500 | `.app-list-line--primary` / `--title` |
+| Cột header list | 12px | 600 | `.app-list-header`, thead |
+| Meta / SKU / ngày / Tag | 11px | 400 | `.app-list-line`, `.app-tag-compact` |
+| Label tertiary | 11–12px | 400 | màu `--app-text-tertiary` |
+| Section uppercase (stats) | 11px | 500–600 | giữ; KPI số phụ **12px** |
+| KPI hero dashboard | 18–22px | 600 | **chỉ** số lớn dashboard — không dùng trên list |
+
+Nhịp dòng list: cao **16px**, gap **2px** (`--app-line-h`, `--app-line-gap`).
+
+```tsx
+// ❌ BAD
+<Text style={{ fontSize: 13 }}>…</Text>
+<Text strong style={{ fontSize: 14 }}>…</Text>
+
+// ✅ GOOD
+<ListLine primary>…</ListLine>
+<Text type="secondary" style={{ fontSize: 12 }}>…</Text>
+```
+
+CSS trang: **cấm** `font-size: 13px` / `14px` trên card, toolbar, table, mobile. Ngoại lệ: KPI hero, brand/login, sider (layout).
+
+## Icon / nút action
+
+ConfigProvider đã `size="small"` — **không** set `fontSize` trên icon trừ khi khớp bảng dưới.
+
+| Chỗ | Size | Cách |
+|---|---|---|
+| CTA header (`PageHeader` extra) | icon inherit ~14px, nút cao 24 | `<Button icon={<ReloadOutlined />} />` — không `size="large"` |
+| Action trên card / table row | `type="text"` + `size="small"` | Edit / More / Delete; gap 4px (`.app-list-card-head-actions`) |
+| Icon cạnh chữ 12px | **12px** | copy, link, hint |
+| Status | chấm **7px** | `<StatusDot />` — không icon status 16px |
+| Thumb sản phẩm | **52px** | chỉ Listings/Orders khi có ảnh — entity card **không** bịa thumb |
+
+```tsx
+// ❌ BAD — icon to hơn chữ, lệch Listings
+<EditOutlined style={{ fontSize: 18 }} />
+<Button size="middle" icon={<ReloadOutlined />} />
+
+// ✅ GOOD
+<Button type="text" size="small" icon={<EditOutlined />} aria-label="Sửa" />
+<Button icon={<ReloadOutlined />} aria-label="Tải lại" />
+```
+
+## Chrome trang list
+
+Thứ tự: `PageHeader` → `admin-filters` (+ `admin-filters-search` / `admin-filters-grid` / `admin-filters-end`) → Tabs `size="small"` (nếu có) → body → `Pagination size="small"` class `.app-list-pagination`.
+
+Hai họ layout (cùng token, **không** ép sổ cái thành card sản phẩm):
+
+- **List-card:** `.app-list-card` + `ListHeader` — catalog (Listings, Orders, Fulfil Cards/Accounts, Supplier Purchases).
+- **Dense table:** Ant Table (đã densify 12px trong `app.css`) — sổ cái, Shops, Users, stats.
+
+Primitive: `ListCard`, `ListCardHead`, `ListCardBody`, `ListHeader`, `ListLine`, `ListPagination`, `StatusDot` từ `@drop/ui`.
+
+## Token màu
+
+Dùng `--app-*` (surface / border / text). CSS domain **alias** (`--listing-*`, `--fulfil-*`, …) sang `--app-*`. Không copy hex mới cho nền/chữ. Semantic riêng (money, credit/debit) được phép.
+
+Light/dark: token trên `:root` — Modal portal inherit. Đừng hard-code `#fff` / `rgba(0,0,0,0.88)` trên trang mới.
+
+## Ngoài phạm vi
+
+- `ListingEditPage` / `products.css` (form 4Seller).
+- Popup browser extensions.
+- Đổi `colorPrimary` / dark algorithm Ant.
+
+Khi lệch: sửa cho khớp bảng trên, **không** nhân bản class/font theo domain.

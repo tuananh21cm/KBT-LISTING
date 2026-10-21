@@ -1,0 +1,28 @@
+{
+  "name": "@drop/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./order": "./src/order.ts",
+    "./dashboard": "./src/dashboard.ts",
+    "./api": "./src/api.ts",
+    "./pricingTemplate": "./src/pricingTemplate.ts",
+    "./shippingTemplate": "./src/shippingTemplate.ts",
+    "./platform": "./src/platform.ts",
+    "./listing": "./src/listing.ts",
+    "./shop": "./src/shop.ts",
+    "./shopFinance": "./src/shopFinance.ts",
+    "./companyLedger": "./src/companyLedger.ts",
+    "./productOpportunity": "./src/productOpportunity.ts",
+    "./receivingBank": "./src/receivingBank.ts",
+    "./fourSeller": "./src/fourSeller.ts",
+    "./fulfil": "./src/fulfil.ts",
+    "./supplierSeller": "./src/supplierSeller.ts"
+  },
+
+
+
+  "files": ["src"]
+}

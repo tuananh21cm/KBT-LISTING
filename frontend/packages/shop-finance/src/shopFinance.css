@@ -1,0 +1,401 @@
+.shop-finance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.shop-finance-page.is-mobile {
+  gap: 10px;
+}
+
+.shop-finance-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.shop-finance-shop-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shop-finance-shop-cell > .ant-avatar {
+  flex-shrink: 0;
+}
+
+.shop-finance-shop-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+}
+
+.shop-finance-shop-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.shop-finance-shop-name-link,
+.shop-finance-shop-name-text {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  overflow: hidden;
+  color: inherit;
+}
+
+.shop-finance-name-head {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-finance-name-tail {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.shop-finance-shop-profile {
+  display: block;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.65));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-finance-shop-th,
+.shop-finance-shop-td {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+.shop-finance-deli {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.65));
+  background: var(--ant-color-fill-tertiary, #f5f5f5);
+}
+
+.shop-finance-money {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.shop-finance-money.is-zero {
+  color: var(--ant-color-text-quaternary, rgba(0, 0, 0, 0.25));
+}
+
+button.shop-finance-ledger-link {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+button.shop-finance-ledger-link:hover .shop-finance-money:not(.is-zero),
+button.shop-finance-ledger-link:focus-visible .shop-finance-money:not(.is-zero) {
+  color: var(--ant-color-primary, #1677ff);
+  text-decoration: underline;
+}
+
+.shop-finance-card-metric.is-clickable {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.shop-finance-card-metric.is-clickable:hover .shop-finance-money:not(.is-zero),
+.shop-finance-card-metric.is-clickable:focus-visible .shop-finance-money:not(.is-zero) {
+  text-decoration: underline;
+}
+
+.shop-finance-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop-finance-toolbar .admin-filters {
+  margin-bottom: 0;
+}
+
+a.shop-finance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--ant-color-bg-container, #fff);
+  border: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+}
+
+a.shop-finance-card:active {
+  background: var(--ant-color-fill-alter, #fafafa);
+}
+
+.shop-finance-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shop-finance-card-head .ant-avatar {
+  flex-shrink: 0;
+}
+
+.shop-finance-card-head .shop-finance-shop-meta {
+  flex: 1;
+  min-width: 0;
+  gap: 0;
+}
+
+.shop-finance-card .shop-finance-shop-name {
+  flex-wrap: nowrap;
+}
+
+.shop-finance-card .shop-finance-shop-profile {
+  font-size: 11px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shop-finance-card-bank.ant-tag {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  border-radius: 3px;
+}
+
+.shop-finance-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+
+.shop-finance-card-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.shop-finance-card-metric-label {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ant-color-text-tertiary, rgba(0, 0, 0, 0.45));
+}
+
+.shop-finance-card-metric .shop-finance-money {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shop-finance-card-metric.is-received .shop-finance-money:not(.is-zero) {
+  color: #389e0d;
+}
+
+.shop-finance-card-metric.is-hold .shop-finance-money:not(.is-zero) {
+  color: #d46b08;
+}
+
+.shop-finance-mobile-table .ant-table,
+.shop-finance-mobile-table .ant-table-container,
+.shop-finance-mobile-table .ant-table-content,
+.shop-finance-mobile-table table {
+  background: transparent;
+}
+
+.shop-finance-mobile-table .ant-table {
+  font-size: 12px;
+}
+
+.shop-finance-mobile-table .ant-table-tbody > tr > td {
+  padding: 0 0 6px !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  white-space: normal;
+}
+
+.shop-finance-mobile-table .ant-table-tbody > tr:last-child > td {
+  padding-bottom: 0 !important;
+}
+
+.shop-finance-mobile-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: transparent !important;
+}
+
+.shop-finance-page.is-mobile .dashboard-kpi-card.is-compact .dashboard-kpi-icon {
+  display: none;
+}
+
+.shop-finance-page.is-mobile .dashboard-kpi-card.is-compact .dashboard-kpi-head {
+  margin-bottom: 4px;
+}
+
+.shop-finance-page.is-mobile .dashboard-kpi-amount,
+.shop-finance-page.is-mobile .dashboard-kpi-amount-main {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+html[data-theme='dark'] .shop-finance-shop-profile {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+html[data-theme='dark'] .shop-finance-deli {
+  color: rgba(255, 255, 255, 0.65);
+  background: #212121;
+}
+
+html[data-theme='dark'] .shop-finance-money.is-zero {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+html[data-theme='dark'] a.shop-finance-card {
+  background: #141414;
+  border-color: #303030;
+}
+
+html[data-theme='dark'] a.shop-finance-card:active {
+  background: #1f1f1f;
+}
+
+html[data-theme='dark'] .shop-finance-card-metric.is-received .shop-finance-money:not(.is-zero) {
+  color: #95de64;
+}
+
+html[data-theme='dark'] .shop-finance-card-metric.is-hold .shop-finance-money:not(.is-zero) {
+  color: #ffc069;
+}
+
+html[data-theme='dark'] .shop-finance-card-metric-label {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.shop-finance-txn-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.shop-finance-txn-sub,
+.shop-finance-txn-period {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.shop-finance-txn-credit {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #389e0d;
+  white-space: nowrap;
+}
+
+.shop-finance-txn-debit {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #cf1322;
+  white-space: nowrap;
+}
+
+.shop-finance-txn-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shop-finance-txn-mobile-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shop-finance-txn-time,
+.shop-finance-txn-meta {
+  font-size: 12px;
+}
+
+.shop-finance-txn-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.shop-finance-txn-card {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.shop-finance-txn-card-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shop-finance-txn-card-no {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-theme='dark'] .shop-finance-txn-credit {
+  color: #73d13d;
+}
+
+html[data-theme='dark'] .shop-finance-txn-debit {
+  color: #ff7875;
+}

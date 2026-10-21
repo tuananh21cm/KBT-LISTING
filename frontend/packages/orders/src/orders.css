@@ -1,0 +1,712 @@
+/* Orders list + detail — surfaces/borders/text that Ant Design tokens don't cover.
+   Vars on :root so Drawer portal (outside page tree) still inherits. */
+
+:root {
+  --order-surface: var(--app-surface);
+  --order-surface-muted: var(--app-surface-muted);
+  --order-surface-subtle: var(--app-surface-subtle);
+  --order-surface-selected: var(--app-surface-selected);
+  --order-border: var(--app-border);
+  --order-border-strong: var(--app-border-strong);
+  --order-border-header: #ebebeb;
+  --order-text: var(--app-text);
+  --order-text-secondary: var(--app-text-secondary);
+  --order-text-tertiary: var(--app-text-tertiary);
+  --order-text-quaternary: rgba(0, 0, 0, 0.35);
+  --order-money: #531dab;
+  --order-cost: #873c00;
+  --order-deadline: #cf1322;
+  --order-note-buyer-fg: #1677ff;
+  --order-note-buyer-bg: #e6f4ff;
+  --order-note-seller-fg: #d46b08;
+  --order-note-seller-bg: #fff7e6;
+  --order-note-internal-fg: #531dab;
+  --order-note-internal-bg: #f9f0ff;
+  --order-thumb-bg: var(--app-surface-subtle);
+  --order-thumb-size: var(--app-thumb-size);
+  --order-dot-empty-bg: #ffffff;
+  --order-dot-empty-border: #d9d9d9;
+  --order-timeline-pending: #e8e8e8;
+  --order-timeline-gap-bg: #fafafa;
+  --order-settlement-bg: #f6ffed;
+  --order-settlement-border: #b7eb8f;
+  --order-settlement-fg: #389e0d;
+  --order-ship-seller-fg: #d46b08;
+  --order-ship-seller-bg: #fff7e6;
+  --order-ship-tiktok-fg: #161823;
+  --order-ship-tiktok-bg: #f0f0f0;
+  --order-link: var(--app-link);
+}
+
+html[data-theme='dark'] {
+  --order-border-header: #383838;
+  --order-text-quaternary: rgba(255, 255, 255, 0.35);
+  --order-money: #b37feb;
+  --order-cost: #ffc069;
+  --order-deadline: #ff7875;
+  --order-note-buyer-fg: #69b1ff;
+  --order-note-buyer-bg: rgba(22, 119, 255, 0.18);
+  --order-note-seller-fg: #ffa940;
+  --order-note-seller-bg: rgba(212, 107, 8, 0.18);
+  --order-note-internal-fg: #b37feb;
+  --order-note-internal-bg: rgba(114, 46, 209, 0.22);
+  --order-dot-empty-bg: #2f2f2f;
+  --order-dot-empty-border: #595959;
+  --order-timeline-pending: #595959;
+  --order-timeline-gap-bg: #3a3a3a;
+  --order-settlement-bg: rgba(82, 196, 26, 0.12);
+  --order-settlement-border: rgba(82, 196, 26, 0.35);
+  --order-settlement-fg: #95de64;
+  --order-ship-seller-fg: #ffa940;
+  --order-ship-seller-bg: rgba(212, 107, 8, 0.18);
+  --order-ship-tiktok-fg: #f5f5f5;
+  --order-ship-tiktok-bg: rgba(255, 255, 255, 0.12);
+}
+
+.order-link {
+  color: var(--order-link);
+  cursor: pointer;
+}
+
+/* Hành động chọn đơn USPS — cùng hàng tabs (căn phải), không chiếm full-width riêng */
+.orders-selection-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--order-surface-selected);
+}
+
+@media (max-width: 767px) {
+  .orders-selection-bar {
+    margin-left: 0;
+    width: 100%;
+    padding: 6px 8px;
+  }
+}
+
+html[data-theme='dark'] .admin-card-grid > .admin-col-meta {
+  border-top-color: var(--order-border);
+}
+
+/* Order card body: top-align columns + shared row rhythm */
+.order-card-body {
+  align-items: start;
+}
+
+.order-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--order-thumb-size);
+  height: var(--order-thumb-size);
+  line-height: 0;
+}
+
+.order-thumb-index {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 4px 0 4px 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 15px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.order-card-body .order-card-col {
+  min-width: 0;
+}
+
+.order-product-block {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+/* 3 dòng × 16px + 2 gap × 2px = 52px — khớp thumb / ListingCard */
+.order-card-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: var(--order-thumb-size);
+}
+
+.order-card-line {
+  height: 16px;
+  line-height: 16px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--order-text-secondary);
+}
+
+.order-card-line--title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--order-text);
+}
+
+a.order-card-line--title {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.order-card-line--title:hover {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+.order-card-line--title-no-source {
+  color: var(--ant-color-warning, #faad14);
+}
+
+.order-card-line--row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.order-card-line--row .listing-rating {
+  margin-top: 0;
+}
+
+.order-card-line-meta {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--order-text-secondary);
+}
+
+/* Supplier shop line — parity ListingCard */
+.listing-supplier-shop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  height: 16px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.listing-store-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.listing-supplier-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.listing-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 140px;
+  color: #08979c;
+  text-decoration: none;
+  flex: 0 1 auto;
+}
+
+a.listing-store:hover,
+a.listing-store:hover .listing-store-title {
+  color: var(--ant-color-primary, #1677ff);
+}
+
+a.listing-store:hover .listing-store-title {
+  text-decoration: underline;
+}
+
+.listing-store-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  color: #08979c;
+  line-height: 16px;
+}
+
+.listing-supplier-stats {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--order-text-tertiary);
+  font-size: 11px;
+}
+
+.listing-supplier-stats > * + *::before {
+  content: '·';
+  margin: 0 4px;
+  color: var(--order-text-quaternary);
+}
+
+.listing-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.listing-stat-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.listing-stat--rank {
+  color: #0958d9;
+}
+
+.listing-stat--follow {
+  color: #531dab;
+}
+
+.listing-ship-sla {
+  font-size: 11px;
+  color: #007d49;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 16px;
+}
+
+.listing-ship-badge {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.listing-ship-badge--local {
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.listing-ship-badge--quick {
+  color: #d46b08;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+}
+
+html[data-theme='dark'] .listing-store,
+html[data-theme='dark'] .listing-store-title {
+  color: #36cfc9;
+}
+
+html[data-theme='dark'] .listing-stat--rank {
+  color: #69b1ff;
+}
+
+html[data-theme='dark'] .listing-stat--follow {
+  color: #b37feb;
+}
+
+html[data-theme='dark'] .listing-ship-sla {
+  color: #3dcc8a;
+}
+
+html[data-theme='dark'] .listing-ship-badge--local {
+  color: #95de64;
+  background: rgba(82, 196, 26, 0.16);
+  border-color: rgba(135, 208, 104, 0.45);
+}
+
+html[data-theme='dark'] .listing-ship-badge--quick {
+  color: #ffc069;
+  background: rgba(250, 140, 22, 0.16);
+  border-color: rgba(255, 192, 105, 0.4);
+}
+
+/* ── Order detail drawer ───────────────────────────────────────────
+   Dense type: label 11 · body 12 · title 12/600 · id 13 · money 13
+   Ưu tiên hiện nhiều thông tin hơn khoảng trắng. */
+
+.order-detail-drawer .ant-drawer-header {
+  padding: 8px 12px;
+}
+
+.order-detail-drawer .ant-drawer-header-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.order-detail-drawer .ant-drawer-body {
+  padding: 8px 10px 14px;
+  background: var(--order-surface-subtle);
+}
+
+.order-detail-drawer .ant-tag {
+  font-size: 11px;
+  line-height: 18px;
+  padding-inline: 5px;
+}
+
+.order-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-detail-section {
+  border: 1px solid var(--order-border);
+  border-radius: 6px;
+  background: var(--order-surface-muted);
+  padding: 8px 10px;
+}
+
+.order-detail-section--surface {
+  background: var(--order-surface);
+  border-color: var(--order-border-strong);
+}
+
+.order-detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.order-detail-section-title {
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.3;
+  color: var(--order-text) !important;
+}
+
+.order-detail-field {
+  min-width: 0;
+}
+
+.order-detail-field--span2 {
+  grid-column: 1 / -1;
+}
+
+.order-detail-field-label {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--order-text-tertiary);
+  margin-bottom: 1px;
+}
+
+.order-detail-field-value {
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+  color: var(--order-text);
+}
+
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+}
+
+.order-detail-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+}
+
+.order-detail-panels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+@media (min-width: 560px) {
+  .order-detail-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Header card — tags + mã đơn cùng hàng khi đủ chỗ */
+.order-detail-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-detail-hero-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+.order-detail-hero-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.order-detail-hero-id-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.order-detail-hero-id {
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.3 !important;
+  word-break: break-all;
+  color: var(--order-text) !important;
+}
+
+.order-detail-hero-id-row .ant-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  padding: 0;
+}
+
+.order-detail-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px 12px;
+}
+
+@media (min-width: 420px) {
+  .order-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  .order-detail-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.order-detail-meta-item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 4px;
+  align-items: baseline;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.order-detail-meta-label {
+  font-size: 11px;
+  color: var(--order-text-tertiary);
+}
+
+.order-detail-meta-value {
+  font-size: 12px;
+  color: var(--order-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--order-border);
+}
+
+@media (min-width: 560px) {
+  .order-detail-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.order-detail-stat--money .order-detail-field-value {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--order-money);
+  line-height: 1.25;
+}
+
+.order-detail-cancel-reason {
+  font-size: 11px !important;
+  max-width: min(100%, 240px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mua hàng / Doanh thu denser chỉ trong drawer (không đụng Fulfil hover) */
+.order-detail-drawer .supplier-purchase-section-head {
+  margin-bottom: 4px;
+}
+
+.order-detail-drawer .supplier-purchase-section-title {
+  font-size: 12px !important;
+}
+
+.order-detail-drawer .supplier-purchase-cost,
+.order-detail-drawer .supplier-purchase-sell {
+  font-size: 12px;
+}
+
+.order-detail-drawer .supplier-purchase-grid {
+  gap: 2px 0;
+}
+
+.order-detail-drawer .supplier-purchase-field {
+  line-height: 1.25;
+  gap: 8px;
+}
+
+.order-detail-drawer .supplier-purchase-field-label,
+.order-detail-drawer .supplier-purchase-field-value,
+.order-detail-drawer .supplier-purchase-field-strong {
+  font-size: 11px;
+}
+
+.order-detail-drawer .supplier-purchase-track {
+  margin: 4px 0 0;
+}
+
+.order-detail-drawer .supplier-purchase-track-no {
+  font-size: 11px !important;
+}
+
+.order-detail-drawer .supplier-purchase-section-meta {
+  margin-bottom: 4px;
+}
+
+.order-detail-drawer .supplier-purchase-multi-note {
+  margin: 4px 0 2px;
+}
+
+.order-detail-drawer .supplier-purchase-link {
+  padding-top: 6px;
+}
+
+/* Timeline fulfil denser */
+.order-detail-fulfil-head {
+  margin-bottom: 6px !important;
+}
+
+.order-detail-fulfil-head .ant-typography {
+  font-size: 11px !important;
+}
+
+.order-detail-fulfil-row {
+  min-height: 0 !important;
+  gap: 8px !important;
+}
+
+.order-detail-fulfil-row .order-detail-fulfil-body {
+  padding-bottom: 6px !important;
+}
+
+.order-detail-fulfil-row:last-child .order-detail-fulfil-body {
+  padding-bottom: 0 !important;
+}
+
+.order-detail-fulfil-label {
+  font-size: 12px !important;
+}
+
+.order-detail-fulfil-time {
+  font-size: 11px !important;
+}
+
+.order-detail-fulfil-seg {
+  font-size: 10px !important;
+  margin-top: 1px !important;
+}
+
+.order-detail-note {
+  border-radius: 4px;
+  padding: 5px 8px;
+  border-left: 3px solid;
+}
+
+.order-detail-note-label {
+  display: block;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  margin-bottom: 1px !important;
+  line-height: 1.3;
+}
+
+.order-detail-note-text {
+  font-size: 12px !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.order-detail-product-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.order-detail-product-row + .order-detail-product-row {
+  border-top: 1px solid var(--order-border);
+}
+
+.order-detail-product-price {
+  text-align: right;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.order-detail-buyer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .order-detail-buyer-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}

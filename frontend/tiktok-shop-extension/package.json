@@ -1,0 +1,27 @@
+{
+  "name": "kinhbac-tiktok-shop-extension",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Extension KBT Seller — lấy thông tin shop TikTok Shop US (seller-us) qua 4seller-api.kbt.global",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "tsc --noEmit && vite build",
+    "build:local": "tsc --noEmit && vite build --mode development",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,6 @@
+@Api_HostAddress = http://localhost:5000
+
+GET {{Api_HostAddress}}/api/v1/health
+Accept: application/json
+
+###

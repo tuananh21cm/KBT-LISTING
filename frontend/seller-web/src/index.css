@@ -1,0 +1,2 @@
+/* Global styles live in @drop/theme — keep this file as the app entry import only. */
+@import '@drop/theme/app.css';

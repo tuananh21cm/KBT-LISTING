@@ -1,0 +1,60 @@
+{
+  "name": "admin-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "postinstall": "node scripts/patch-charts-util-render.mjs"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.3.2",
+    "@ant-design/plots": "^2.6.8",
+    "@drop/api-client": "*",
+    "@drop/dashboard": "*",
+    "@drop/fourseller": "*",
+    "@drop/fulfil": "*",
+    "@drop/listings": "*",
+    "@drop/orders": "*",
+    "@drop/receiving-banks": "*",
+    "@drop/shop-finance": "*",
+    "@drop/company-ledger": "*",
+    "@drop/shop-tasks": "*",
+    "@drop/shops": "*",
+    "@drop/stats": "*",
+    "@drop/supplier-lists": "*",
+    "@drop/product-opportunities": "*",
+    "@drop/promotions": "*",
+    "@drop/theme": "*",
+    "@drop/types": "*",
+    "@drop/ui": "*",
+    "@drop/utils": "*",
+    "@microsoft/signalr": "^10.0.11",
+    "@tanstack/react-query": "^5.101.2",
+    "antd": "^6.5.0",
+    "axios": "^1.18.1",
+    "dayjs": "^1.11.21",
+    "otpauth": "^9.5.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
+    "tslib": "^2.8.1",
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  },
+  "overrides": {
+    "@ant-design/charts-util": "0.0.3"
+  }
+}

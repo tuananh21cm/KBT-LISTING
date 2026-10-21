@@ -1,0 +1,26 @@
+{
+  "name": "@drop/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./createOrderApi": "./src/createOrderApi.ts",
+    "./createDashboardApi": "./src/createDashboardApi.ts",
+    "./createListingApi": "./src/createListingApi.ts",
+    "./createShopApi": "./src/createShopApi.ts",
+    "./createReceivingBankApi": "./src/createReceivingBankApi.ts",
+    "./createFourSellerApi": "./src/createFourSellerApi.ts",
+    "./createFulfilApi": "./src/createFulfilApi.ts",
+    "./createSupplierSellerApi": "./src/createSupplierSellerApi.ts",
+    "./createProductOpportunityApi": "./src/createProductOpportunityApi.ts"
+  },
+
+  "files": ["src"],
+  "dependencies": {
+    "@drop/types": "*"
+  },
+  "peerDependencies": {
+    "axios": "^1.0.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@drop/theme",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./antdTheme": "./src/antdTheme.ts",
+    "./isDarkTheme": "./src/isDarkTheme.ts",
+    "./createThemeStore": "./src/createThemeStore.ts",
+    "./layout": "./src/layout.ts",
+    "./app.css": "./src/app.css"
+  },
+  "files": ["src"],
+  "peerDependencies": {
+    "antd": "^6.0.0",
+    "zustand": "^5.0.0"
+  }
+}

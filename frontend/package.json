@@ -1,0 +1,23 @@
+{
+  "name": "drop-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "admin-web",
+    "seller-web",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:admin": "npm run dev -w admin-web",
+    "dev:seller": "npm run dev -w seller-web",
+    "build:admin": "npm run build -w admin-web",
+    "build:seller": "npm run build -w seller-web",
+    "build": "npm run build:admin && npm run build:seller",
+    "lint:admin": "npm run lint -w admin-web",
+    "lint:seller": "npm run lint -w seller-web"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
+  }
+}

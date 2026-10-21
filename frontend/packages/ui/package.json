@@ -1,0 +1,35 @@
+{
+  "name": "@drop/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./AppModal": "./src/AppModal.tsx",
+    "./PageHeader": "./src/PageHeader.tsx",
+    "./PageSpin": "./src/PageSpin.tsx",
+    "./PlatformAvatar": "./src/PlatformAvatar.tsx",
+    "./useIsMobile": "./src/useIsMobile.ts",
+    "./listingRatingSettings": "./src/listingRatingSettings.ts",
+    "./listingRewriteSettings": "./src/listingRewriteSettings.ts",
+    "./listingSpecificsSettings": "./src/listingSpecificsSettings.ts",
+    "./ListingStars": "./src/ListingStars.tsx",
+    "./brand": "./src/brand.ts",
+    "./navLabels": "./src/navLabels.ts",
+    "./ShopScoreBadges": "./src/ShopScoreBadges.tsx",
+    "./SupplierPurchaseCost": "./src/SupplierPurchaseCost.tsx",
+    "./supplierPurchaseCost.css": "./src/supplierPurchaseCost.css"
+  },
+  "files": ["src"],
+  "dependencies": {
+    "@drop/types": "*",
+    "@drop/theme": "*",
+    "@drop/utils": "*"
+  },
+  "peerDependencies": {
+    "antd": "^6.0.0",
+    "dayjs": "^1.11.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

@@ -1,0 +1,1039 @@
+/* Fulfil accounts/cards/transactions modals — surfaces Ant Design tokens don't always cover
+   (Descriptions bordered label cells, form grids, amount/link colors).
+   Vars on :root so Modal portals inherit. */
+
+:root {
+  --fulfil-surface: var(--app-surface);
+  --fulfil-surface-muted: var(--app-surface-muted);
+  --fulfil-surface-subtle: var(--app-surface-subtle);
+  --fulfil-border: var(--app-border);
+  --fulfil-border-strong: var(--app-border-strong);
+  --fulfil-text: var(--app-text);
+  --fulfil-text-secondary: var(--app-text-secondary);
+  --fulfil-text-tertiary: var(--app-text-tertiary);
+  --fulfil-link: var(--app-link);
+  --fulfil-amount-credit: var(--app-amount-credit);
+  --fulfil-amount-debit: var(--app-amount-debit);
+}
+
+.fulfil-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fulfil-form-grid-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 576px) {
+  .fulfil-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* PingPong bulk card import modal (/fulfil/cards) */
+.fulfil-import-upload {
+  margin: 8px 0 16px;
+}
+
+.fulfil-import-upload-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fulfil-import-preview {
+  margin-top: 4px;
+}
+
+.fulfil-import-row-error td {
+  background: color-mix(in srgb, #ff4d4f 8%, transparent) !important;
+}
+
+html[data-theme='dark'] .fulfil-import-row-error td {
+  background: color-mix(in srgb, #ff4d4f 16%, transparent) !important;
+}
+
+/* View modals (accounts/cards): Descriptions bordered cells match dark palette */
+.fulfil-view-descriptions.ant-descriptions-bordered .ant-descriptions-view {
+  border-color: var(--fulfil-border) !important;
+}
+
+.fulfil-view-descriptions.ant-descriptions-bordered .ant-descriptions-row > th,
+.fulfil-view-descriptions.ant-descriptions-bordered .ant-descriptions-row > td {
+  border-color: var(--fulfil-border) !important;
+}
+
+.fulfil-view-descriptions.ant-descriptions-bordered .ant-descriptions-item-label {
+  background: var(--fulfil-surface-muted) !important;
+  color: var(--fulfil-text-secondary) !important;
+}
+
+.fulfil-view-descriptions.ant-descriptions-bordered .ant-descriptions-item-content {
+  background: var(--fulfil-surface) !important;
+  color: var(--fulfil-text) !important;
+}
+
+/* Copyable text only — do not force all Typography (amounts/links keep own color). */
+.fulfil-view-descriptions .ant-typography-copy,
+.fulfil-view-descriptions .ant-typography-copy-success {
+  color: var(--fulfil-text) !important;
+}
+
+.fulfil-link {
+  color: var(--fulfil-link);
+  cursor: pointer;
+}
+
+.fulfil-amount-credit {
+  color: var(--fulfil-amount-credit);
+}
+
+.fulfil-amount-debit {
+  color: var(--fulfil-amount-debit);
+}
+
+/* Ledger table — dense single-line rows; fontSize theo APP_FONT_SIZE (12) của @drop/theme */
+.fulfil-txn-table .ant-table-thead > tr > th {
+  padding-block: 6px !important;
+  padding-inline: 8px !important;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fulfil-text-secondary);
+}
+
+.fulfil-txn-table .ant-table-tbody > tr > td {
+  font-size: 12px;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.fulfil-txn-table .ant-table-tbody > tr > td .ant-typography {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.fulfil-txn-table .fulfil-txn-col-index {
+  color: var(--fulfil-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.fulfil-txn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fulfil-txn-order-cell {
+  gap: 4px;
+}
+
+.fulfil-txn-order-cell .fulfil-txn-carrier-copy.ant-tag {
+  flex-shrink: 0;
+  line-height: 16px;
+  padding: 0 5px;
+  font-size: 10px;
+}
+
+.fulfil-txn-order-cell .fulfil-txn-await-track.ant-tag {
+  flex-shrink: 0;
+  line-height: 16px;
+  padding: 0 5px;
+  font-size: 10px;
+  color: var(--fulfil-text-tertiary, #8c8c8c);
+  background: transparent;
+  border-color: var(--ant-color-border, #d9d9d9);
+}
+
+.fulfil-txn-order-cell .fulfil-order-preview-trigger {
+  min-width: 0;
+}
+
+.fulfil-txn-amount-preview {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.fulfil-txn-carrier-copy.ant-tag {
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.fulfil-txn-inline > .ant-typography {
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 132px;
+}
+
+.fulfil-txn-mono {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fulfil-txn-id,
+.fulfil-txn-table .fulfil-order-preview-trigger .ant-typography {
+  font-size: 12px;
+  line-height: 1.35;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fulfil-txn-muted,
+.fulfil-txn-muted.ant-typography {
+  color: var(--fulfil-text-tertiary);
+  font-size: 12px;
+}
+
+.fulfil-txn-amount,
+.fulfil-txn-amount.ant-typography {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fulfil-txn-amount-muted,
+.fulfil-txn-amount-muted.ant-typography {
+  color: var(--fulfil-text-tertiary);
+}
+
+.fulfil-txn-amount-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.fulfil-txn-amount-title .fulfil-txn-amount,
+.fulfil-txn-amount-title .fulfil-txn-amount.ant-typography {
+  font-size: 11px;
+}
+
+.fulfil-txn-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.fulfil-txn-stat {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--fulfil-border);
+  border-radius: 8px;
+  background: var(--fulfil-surface);
+}
+
+.fulfil-txn-stat-label {
+  display: block;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--fulfil-text-secondary);
+  margin-bottom: 2px;
+}
+
+.fulfil-txn-stat-value {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  color: var(--fulfil-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fulfil-txn-stat-value .fulfil-txn-amount,
+.fulfil-txn-stat-value .ant-typography {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.fulfil-txn-tag.ant-tag {
+  margin: 0;
+  padding-inline: 5px;
+  font-size: 11px;
+  line-height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.fulfil-txn-actions .ant-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.fulfil-txn-page.is-mobile {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .fulfil-txn-page .admin-filters-grid > .ant-select,
+  .fulfil-txn-page .admin-filters-grid > .admin-filters-search {
+    min-width: 0;
+  }
+
+  .fulfil-txn-page .admin-filters-grid > .admin-filters-search {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+.fulfil-txn-page.is-mobile .fulfil-txn-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.fulfil-txn-page.is-mobile .fulfil-txn-stat {
+  padding: 6px 8px;
+}
+
+.fulfil-txn-page.is-mobile .fulfil-txn-stat-value,
+.fulfil-txn-page.is-mobile .fulfil-txn-stat-value .fulfil-txn-amount,
+.fulfil-txn-page.is-mobile .fulfil-txn-stat-value .ant-typography {
+  font-size: 13px;
+}
+
+.fulfil-txn-mobile-table.ant-table-wrapper,
+.fulfil-txn-mobile-table .ant-spin-nested-loading,
+.fulfil-txn-mobile-table .ant-spin-container,
+.fulfil-txn-mobile-table .ant-table,
+.fulfil-txn-mobile-table .ant-table-container,
+.fulfil-txn-mobile-table .ant-table-content,
+.fulfil-txn-mobile-table .ant-table-body,
+.fulfil-txn-mobile-table table {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  background: transparent;
+}
+
+/* Không cuộn lồng trong bảng — trang đã phân trang, chỉ cuộn theo layout. */
+.fulfil-txn-mobile-table.ant-table-wrapper,
+.fulfil-txn-mobile-table .ant-table-container,
+.fulfil-txn-mobile-table .ant-table-content,
+.fulfil-txn-mobile-table .ant-table-body {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.fulfil-txn-mobile-table table {
+  table-layout: fixed;
+}
+
+.fulfil-txn-mobile-table .ant-table {
+  font-size: 12px;
+}
+
+.fulfil-txn-mobile-table .ant-table-tbody > tr > td {
+  padding: 0 0 8px !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  white-space: normal;
+  width: 100%;
+  max-width: 0;
+  overflow: hidden;
+}
+
+.fulfil-txn-mobile-table .ant-table-tbody > tr:last-child > td {
+  padding-bottom: 0 !important;
+}
+
+.fulfil-txn-mobile-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: transparent !important;
+}
+
+.fulfil-txn-mobile-table .ant-pagination {
+  max-width: 100%;
+}
+
+.fulfil-txn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: var(--fulfil-surface);
+  border: 1px solid var(--fulfil-border);
+  line-height: 1.3;
+}
+
+.fulfil-txn-card[class*='fulfil-txn-group-'] {
+  border-left-width: 3px;
+  border-left-color: var(--fulfil-txn-group);
+}
+
+.fulfil-txn-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  height: 28px;
+  padding: 2px 12px;
+  background: var(--fulfil-surface-muted);
+  border-bottom: 1px solid var(--fulfil-border);
+  font-size: 12px;
+}
+
+.fulfil-txn-card-top .fulfil-txn-amount,
+.fulfil-txn-card-top .fulfil-txn-amount.ant-typography {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.fulfil-txn-card-account,
+.fulfil-txn-card-account.ant-typography {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fulfil-text);
+}
+
+.fulfil-txn-card-time {
+  font-size: 12px;
+  color: var(--fulfil-text-tertiary);
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.fulfil-txn-card-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 6px 10px 0;
+}
+
+.fulfil-txn-card-line .fulfil-txn-inline {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fulfil-txn-card-line .fulfil-txn-inline > .ant-typography,
+.fulfil-txn-card-line .fulfil-order-preview-trigger,
+.fulfil-txn-card-line .fulfil-txn-id {
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fulfil-txn-card-pnl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+  margin: 6px 10px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--fulfil-surface-muted);
+  border: 1px solid var(--fulfil-border);
+}
+
+.fulfil-txn-card-pnl > span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fulfil-txn-card-pnl-label {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--fulfil-text-tertiary);
+}
+
+.fulfil-txn-card-pnl .fulfil-txn-amount,
+.fulfil-txn-card-pnl .fulfil-txn-amount.ant-typography {
+  font-size: 12px;
+}
+
+.fulfil-txn-card-extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 4px 10px 0;
+  font-size: 11px;
+  color: var(--fulfil-text-tertiary);
+}
+
+.fulfil-txn-card-extras > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.fulfil-txn-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 10px 8px;
+}
+
+.fulfil-txn-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.fulfil-txn-card-seller,
+.fulfil-txn-card-seller.ant-typography {
+  min-width: 0;
+  max-width: 140px;
+  font-size: 12px;
+  color: var(--fulfil-text-tertiary);
+}
+
+.fulfil-txn-card-foot .fulfil-txn-actions {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.fulfil-edit-modal .ant-form-item-label > label,
+.fulfil-edit-modal .ant-form-item-extra {
+  color: var(--fulfil-text-secondary);
+}
+
+/* Nhiều lần quẹt thẻ của cùng một đơn (joint shipment tách theo billno) dùng chung nền
+   để soát nhanh. Tint trong suốt nên hoạt động cả light lẫn dark. Tránh xanh lá / đỏ vì
+   trùng nghĩa với màu thu / chi của cột số tiền. */
+.fulfil-txn-group-0 {
+  --fulfil-txn-group: #722ed1;
+}
+
+.fulfil-txn-group-1 {
+  --fulfil-txn-group: #13c2c2;
+}
+
+.fulfil-txn-group-2 {
+  --fulfil-txn-group: #fa8c16;
+}
+
+.fulfil-txn-group-3 {
+  --fulfil-txn-group: #eb2f96;
+}
+
+/* Nhường nền cho dòng đang chọn / đang xem: hai trạng thái đó cần nổi hơn màu nhóm. */
+.ant-table-tbody
+  > tr[class*='fulfil-txn-group-']:not(.ant-table-row-selected):not(.fulfil-txn-row-active)
+  > td {
+  background: color-mix(in srgb, var(--fulfil-txn-group) 10%, transparent) !important;
+}
+
+.ant-table-tbody
+  > tr[class*='fulfil-txn-group-']:not(.ant-table-row-selected):not(.fulfil-txn-row-active):hover
+  > td {
+  background: color-mix(in srgb, var(--fulfil-txn-group) 18%, transparent) !important;
+}
+
+/* Clicked row marker (stays after closing detail modal). */
+.ant-table-tbody > tr.fulfil-txn-row-active > td {
+  background: color-mix(in srgb, var(--fulfil-link) 12%, transparent) !important;
+}
+
+.ant-table-tbody > tr.fulfil-txn-row-active:hover > td {
+  background: color-mix(in srgb, var(--fulfil-link) 18%, transparent) !important;
+}
+
+/* Order id hover preview (lazy GET /admin/orders/{id}/preview). */
+.fulfil-order-preview-trigger {
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: bottom;
+}
+
+.fulfil-order-preview {
+  width: 520px;
+  max-width: min(520px, 96vw);
+  padding: 10px 12px 12px;
+  /* Khớp OrdersPage Doanh thu (supplier-purchase-sell). */
+  --order-money: #531dab;
+}
+
+html[data-theme='dark'] .fulfil-order-preview {
+  --order-money: #b37feb;
+}
+
+.fulfil-order-preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Khớp bề ngang panel thật — tránh Popover reposition khi Spin → content. */
+  box-sizing: border-box;
+  width: 520px;
+  max-width: min(520px, 96vw);
+  min-height: 220px;
+  padding: 10px 12px 12px;
+}
+
+.fulfil-order-preview-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Hiện trọn danh sách; chỉ cuộn khi đơn dài quá màn hình. */
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--fulfil-border);
+}
+
+.fulfil-order-preview-item {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.fulfil-order-preview-thumb {
+  flex-shrink: 0;
+  background: var(--fulfil-surface-subtle);
+}
+
+.fulfil-order-preview-item-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+
+.fulfil-order-preview-title {
+  font-size: 12px;
+  color: var(--fulfil-text);
+}
+
+.fulfil-order-preview-sub {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thuộc tính/SKU và số lượng·giá chung một dòng: SKU cắt bớt, giá luôn đủ chỗ. */
+.fulfil-order-preview-sub-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fulfil-order-preview-sub-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.fulfil-order-preview-sub-qty {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  white-space: nowrap;
+}
+
+.fulfil-order-preview-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.fulfil-order-preview-sections:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+.fulfil-order-preview-section {
+  border: 1px solid var(--fulfil-border);
+  border-radius: 8px;
+  background: var(--fulfil-surface-muted);
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+@media (max-width: 576px) {
+  .fulfil-order-preview {
+    width: 300px;
+  }
+
+  .fulfil-order-preview-sections {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Trong modal: lấp đầy bề ngang và nhường việc cuộn cho body modal (tránh cuộn lồng). */
+.fulfil-order-preview.fulfil-order-preview-full {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.fulfil-order-preview-full .fulfil-order-preview-items,
+.fulfil-order-preview-full .fulfil-order-preview-links {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.fulfil-order-preview-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fulfil-order-preview-section-title {
+  font-size: 12px !important;
+  line-height: 1.3;
+  color: var(--fulfil-text);
+  flex-shrink: 0;
+}
+
+/* Billno / badge — dòng riêng dưới tiêu đề, không nhồi vào hàng title + tổng. */
+.fulfil-order-preview-section-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: -2px 0 8px;
+}
+
+.fulfil-order-preview-multi-tag {
+  margin-inline-end: 0;
+  padding-inline: 4px;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.fulfil-order-preview-multi-note {
+  padding-top: 6px;
+  border-top: 1px dashed var(--fulfil-border);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--fulfil-text-tertiary);
+}
+
+.fulfil-order-preview-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.fulfil-order-preview-link-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.fulfil-order-preview-link-no {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fulfil-text-secondary);
+  word-break: break-all;
+}
+
+.fulfil-order-preview-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.fulfil-order-preview-track-carrier.ant-tag {
+  margin: 0;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+.fulfil-order-preview-track-no {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ant-color-primary, #1677ff);
+  cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fulfil-order-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 0;
+}
+
+.fulfil-order-preview-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.fulfil-order-preview-field-label {
+  font-size: 12px;
+  color: var(--fulfil-text-tertiary);
+  flex-shrink: 0;
+}
+
+.fulfil-order-preview-field-value,
+.fulfil-order-preview-field-strong {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fulfil-text);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.fulfil-order-preview-field-strong {
+  font-weight: 600;
+}
+
+.fulfil-order-preview-discount,
+.fulfil-txn-discount,
+.fulfil-txn-discount.ant-typography {
+  color: #c44a01;
+}
+
+/* Retail Price = giá gốc trước giảm → gạch ngang như cách NCC hiển thị. */
+.fulfil-order-preview-struck {
+  text-decoration: line-through;
+}
+
+.fulfil-order-preview-sell {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--order-money, var(--fulfil-amount-credit));
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.fulfil-order-preview-cost {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fulfil-amount-debit);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.fulfil-tag-compact.ant-tag {
+  margin: 0 !important;
+  padding-inline: 5px !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  height: 18px !important;
+  border-radius: 4px;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+.fulfil-cards-page.is-mobile {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs-nav {
+  margin-bottom: 8px;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs-tab {
+  padding: 6px 0;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs-nav-operations {
+  display: none !important;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs-nav-wrap,
+.fulfil-cards-page.is-mobile .ant-tabs-nav-wrap::before,
+.fulfil-cards-page.is-mobile .ant-tabs-nav-wrap::after {
+  box-shadow: none !important;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs-nav-wrap {
+  overflow: visible !important;
+}
+
+.fulfil-cards-page.is-mobile .ant-tabs,
+.fulfil-cards-page.is-mobile .ant-tabs-content-holder,
+.fulfil-cards-page.is-mobile .ant-tabs-content,
+.fulfil-cards-page.is-mobile .ant-tabs-tabpane {
+  overflow: visible;
+  height: auto;
+}
+
+.fulfil-cards-mobile-table.ant-table-wrapper,
+.fulfil-cards-mobile-table .ant-spin-nested-loading,
+.fulfil-cards-mobile-table .ant-spin-container,
+.fulfil-cards-mobile-table .ant-table,
+.fulfil-cards-mobile-table .ant-table-container,
+.fulfil-cards-mobile-table .ant-table-content,
+.fulfil-cards-mobile-table table {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  background: transparent;
+}
+
+.fulfil-cards-mobile-table .ant-table-container,
+.fulfil-cards-mobile-table .ant-table-content,
+.fulfil-cards-mobile-table .ant-table-body {
+  overflow: visible !important;
+}
+
+.fulfil-cards-mobile-table table {
+  table-layout: fixed;
+}
+
+.fulfil-cards-mobile-table .ant-table-tbody > tr > td {
+  padding: 0 0 8px !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  white-space: normal;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.fulfil-cards-mobile-table .ant-table-tbody > tr:last-child > td {
+  padding-bottom: 0 !important;
+}
+
+.fulfil-cards-mobile-table .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: transparent !important;
+}
+
+.fulfil-mcard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--fulfil-surface);
+  border: 1px solid var(--fulfil-border);
+  line-height: 1.3;
+}
+
+.fulfil-mcard[role='button'] {
+  cursor: pointer;
+}
+
+.fulfil-mcard-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fulfil-mcard-lead {
+  flex-shrink: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fulfil-text);
+}
+
+.fulfil-mcard-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fulfil-text);
+}
+
+.fulfil-mcard-name-lead {
+  flex: 1 1 0;
+}
+
+.fulfil-mcard-aside {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 12px;
+  white-space: nowrap;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fulfil-mcard-meta {
+  display: block !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--fulfil-text-secondary);
+}
+
+.fulfil-mcard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.fulfil-mcard-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.fulfil-mcard-foot .fulfil-txn-actions {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}

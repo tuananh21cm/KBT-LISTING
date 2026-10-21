@@ -1,0 +1,191 @@
+/* Categories list + CategoryCascader popup — Alert / portal surfaces Ant tokens don't always cover.
+   Vars on :root so Select / Tooltip / Cascader portals (outside page tree) still inherit. */
+
+:root {
+  --cat-surface: var(--app-surface);
+  --cat-surface-muted: var(--app-surface-muted);
+  --cat-border: var(--app-border);
+  --cat-text: var(--app-text);
+  --cat-text-secondary: var(--app-text-secondary);
+  --cat-text-tertiary: var(--app-text-tertiary);
+  --cat-info-bg: #e6f4ff;
+  --cat-info-border: #91caff;
+  --cat-info-fg: #0958d9;
+  --cat-success-bg: #f6ffed;
+  --cat-success-border: #b7eb8f;
+  --cat-success-fg: #389e0d;
+}
+
+html[data-theme='dark'] {
+  --cat-info-bg: rgba(22, 119, 255, 0.12);
+  --cat-info-border: rgba(22, 119, 255, 0.35);
+  --cat-info-fg: #69b1ff;
+  --cat-success-bg: rgba(82, 196, 26, 0.14);
+  --cat-success-border: rgba(82, 196, 26, 0.4);
+  --cat-success-fg: #95de64;
+}
+
+.cat-alert.ant-alert-info {
+  background: var(--cat-info-bg);
+  border: 1px solid var(--cat-info-border);
+}
+
+.cat-alert.ant-alert-info .ant-alert-title,
+.cat-alert.ant-alert-info .ant-alert-message,
+.cat-alert.ant-alert-info .ant-alert-icon {
+  color: var(--cat-info-fg);
+}
+
+.cat-alert.ant-alert-success {
+  background: var(--cat-success-bg);
+  border: 1px solid var(--cat-success-border);
+}
+
+.cat-alert.ant-alert-success .ant-alert-title,
+.cat-alert.ant-alert-success .ant-alert-message,
+.cat-alert.ant-alert-success .ant-alert-icon {
+  color: var(--cat-success-fg);
+}
+
+.cat-alert .ant-alert-description {
+  color: var(--cat-text-secondary);
+}
+
+/* Select Site + Tooltip Sync portals */
+html[data-theme='dark'] .ant-select-dropdown {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-active,
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected {
+  background: rgba(22, 119, 255, 0.2);
+  color: #69b1ff;
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  font-weight: 600;
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-empty-description {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-inner {
+  background: #3a3a3a;
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::before,
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::after {
+  background: #3a3a3a;
+}
+
+/* CategoryCascader menus (product form / listing edit / shop catalog modal).
+   Dropdown may portal into `.ant-modal-centered` (text-align: center) — keep labels start-aligned. */
+.ant-cascader-dropdown,
+.ant-cascader-menu,
+.ant-cascader-menu-item {
+  text-align: start;
+}
+
+.ant-cascader-menu-item {
+  justify-content: flex-start;
+}
+
+.ant-cascader-dropdown .ant-cascader-checkbox {
+  margin-inline-end: 8px;
+  flex-shrink: 0;
+}
+
+/* ~8–9 rows (antd default 180px). Thin overlay scrollbar. */
+.ant-cascader-dropdown .ant-cascader-menu {
+  height: min(280px, 40vh) !important;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+
+.ant-cascader-dropdown .ant-cascader-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ant-cascader-dropdown .ant-cascader-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ant-cascader-dropdown .ant-cascader-menu::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 4px;
+}
+
+html[data-theme='dark'] .ant-cascader-dropdown {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-cascader-menu {
+  border-inline-end-color: #424242;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-cascader-dropdown .ant-cascader-menu {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+html[data-theme='dark'] .ant-cascader-dropdown .ant-cascader-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+html[data-theme='dark'] .ant-cascader-menu-item:hover,
+html[data-theme='dark'] .ant-cascader-menu-item-active {
+  background: rgba(22, 119, 255, 0.2);
+}
+
+html[data-theme='dark'] .ant-cascader-menu-item-selected {
+  background: rgba(22, 119, 255, 0.28);
+  color: #69b1ff;
+  font-weight: 600;
+}
+
+/* Inline column menus inside the shop category picker modal. */
+.category-cascader-panel {
+  position: relative;
+  min-height: min(420px, 52vh);
+}
+
+.category-cascader-panel > .ant-select {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.category-cascader-panel .ant-cascader-dropdown {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  padding: 0;
+  border: 1px solid var(--cat-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.category-cascader-panel .ant-cascader-menus {
+  width: 100%;
+  display: flex;
+}
+
+.category-cascader-panel .ant-cascader-dropdown .ant-cascader-menu {
+  flex: 1 1 0;
+  min-width: 0 !important;
+  height: min(420px, 52vh) !important;
+}

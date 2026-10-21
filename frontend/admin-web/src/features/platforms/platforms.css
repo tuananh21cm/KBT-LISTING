@@ -1,0 +1,28 @@
+/* Platforms list + create/edit modal — form labels Ant Design tokens don't always cover.
+   Vars on :root so Modal/Popconfirm portals inherit. */
+
+:root {
+  --plat-surface: var(--app-surface);
+  --plat-surface-muted: var(--app-surface-muted);
+  --plat-border: var(--app-border);
+  --plat-text: var(--app-text);
+  --plat-text-secondary: var(--app-text-secondary);
+  --plat-text-tertiary: var(--app-text-tertiary);
+}
+
+/* Create/edit modal: form labels + explain match secondary/tertiary tokens */
+.plat-edit-modal .ant-form-item-label > label,
+.plat-edit-modal .ant-form-item-extra {
+  color: var(--plat-text-secondary);
+}
+
+.plat-edit-modal .ant-form-item-explain,
+.plat-edit-modal .ant-form-item-additional {
+  color: var(--plat-text-tertiary);
+}
+
+/* Disabled code input stays readable on dark elevated surface */
+.plat-edit-modal .ant-input-disabled,
+.plat-edit-modal .ant-input[disabled] {
+  color: var(--plat-text-secondary);
+}

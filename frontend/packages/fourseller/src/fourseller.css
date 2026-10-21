@@ -1,0 +1,110 @@
+/* 4Seller connect — OAuth modal Alert + Descriptions (Ant tokens don't always cover).
+   Vars on :root so Modal portal inherits. */
+
+:root {
+  --fsc-surface: var(--app-surface);
+  --fsc-surface-muted: var(--app-surface-muted);
+  --fsc-border: var(--app-border);
+  --fsc-text: var(--app-text);
+  --fsc-text-secondary: var(--app-text-secondary);
+  --fsc-text-tertiary: var(--app-text-tertiary);
+  --fsc-success-bg: #f6ffed;
+  --fsc-success-border: #b7eb8f;
+  --fsc-success-fg: #389e0d;
+  --fsc-warn-bg: #fffbe6;
+  --fsc-warn-border: #ffe58f;
+  --fsc-warn-fg: #ad6800;
+}
+
+html[data-theme='dark'] {
+  --fsc-success-bg: rgba(82, 196, 26, 0.14);
+  --fsc-success-border: rgba(82, 196, 26, 0.4);
+  --fsc-success-fg: #95de64;
+  --fsc-warn-bg: rgba(250, 173, 20, 0.12);
+  --fsc-warn-border: rgba(250, 173, 20, 0.35);
+  --fsc-warn-fg: #ffc53d;
+}
+
+.fsc-connect-modal .fsc-connect-hint {
+  color: var(--fsc-text-secondary);
+  margin-bottom: 12px;
+}
+
+.fsc-connect-modal .fsc-connect-hint .ant-typography {
+  color: inherit;
+}
+
+.fsc-connect-modal .fsc-connect-hint .ant-typography strong {
+  color: var(--fsc-text);
+}
+
+.fsc-connect-alert.ant-alert-success {
+  background: var(--fsc-success-bg);
+  border: 1px solid var(--fsc-success-border);
+}
+
+.fsc-connect-alert.ant-alert-success .ant-alert-title,
+.fsc-connect-alert.ant-alert-success .ant-alert-message,
+.fsc-connect-alert.ant-alert-success .ant-alert-icon {
+  color: var(--fsc-success-fg);
+}
+
+.fsc-connect-alert.ant-alert-warning {
+  background: var(--fsc-warn-bg);
+  border: 1px solid var(--fsc-warn-border);
+}
+
+.fsc-connect-alert.ant-alert-warning .ant-alert-title,
+.fsc-connect-alert.ant-alert-warning .ant-alert-message,
+.fsc-connect-alert.ant-alert-warning .ant-alert-icon {
+  color: var(--fsc-warn-fg);
+}
+
+.fsc-connect-alert .ant-alert-description {
+  color: var(--fsc-text-secondary);
+  margin-top: 4px;
+}
+
+/* Check result details: Descriptions bordered — label muted / content surface */
+.fsc-check-descriptions {
+  margin-top: 12px;
+}
+
+.fsc-check-descriptions.ant-descriptions-bordered .ant-descriptions-view {
+  border-color: var(--fsc-border) !important;
+}
+
+.fsc-check-descriptions.ant-descriptions-bordered .ant-descriptions-row > th,
+.fsc-check-descriptions.ant-descriptions-bordered .ant-descriptions-row > td {
+  border-color: var(--fsc-border) !important;
+}
+
+.fsc-check-descriptions.ant-descriptions-bordered .ant-descriptions-item-label {
+  background: var(--fsc-surface-muted) !important;
+  color: var(--fsc-text-secondary) !important;
+}
+
+.fsc-check-descriptions.ant-descriptions-bordered .ant-descriptions-item-content {
+  background: var(--fsc-surface) !important;
+  color: var(--fsc-text) !important;
+}
+
+/* Hạn thanh toán (DELI) — chip nhẹ cạnh tên shop (parity @drop/shops) */
+.fsc-deli-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+  color: var(--fsc-text-secondary);
+  background: var(--fsc-surface-muted);
+  border: 1px solid var(--fsc-border);
+}

@@ -1,0 +1,987 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Shared surfaces / type — ListingsPage is the visual contract.
+   Vars on :root so Modal/Popover/Drawer portals inherit. Domain CSS aliases these. */
+:root {
+  --app-surface: #ffffff;
+  --app-surface-muted: #fafafa;
+  --app-surface-subtle: #f5f5f5;
+  --app-surface-selected: #f0f7ff;
+  --app-border: #f0f0f0;
+  --app-border-strong: #e6e6e6;
+  --app-text: rgba(0, 0, 0, 0.88);
+  --app-text-secondary: rgba(0, 0, 0, 0.65);
+  --app-text-tertiary: rgba(0, 0, 0, 0.45);
+  --app-text-quaternary: rgba(0, 0, 0, 0.25);
+  --app-line-h: 16px;
+  --app-line-gap: 2px;
+  --app-thumb-size: 52px;
+  --app-amount-credit: #389e0d;
+  --app-amount-debit: #cf1322;
+  --app-link: #1677ff;
+}
+
+html[data-theme='dark'] {
+  --app-surface: #2f2f2f;
+  --app-surface-muted: #3a3a3a;
+  --app-surface-subtle: #212121;
+  --app-surface-selected: rgba(22, 119, 255, 0.18);
+  --app-border: #424242;
+  --app-border-strong: #424242;
+  --app-text: rgba(255, 255, 255, 0.88);
+  --app-text-secondary: rgba(255, 255, 255, 0.65);
+  --app-text-tertiary: rgba(255, 255, 255, 0.45);
+  --app-text-quaternary: rgba(255, 255, 255, 0.25);
+  --app-amount-credit: #73d13d;
+  --app-amount-debit: #ff7875;
+  --app-link: #69b1ff;
+}
+
+/* —— Login page —— */
+.login-page-shell {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.login-page-theme-toggle {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 10;
+}
+
+.login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f4ff 50%, #ffffff 100%);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.login-page--loading {
+  background: #f5f5f5;
+}
+
+.login-page-card {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.login-page-brand {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.login-page-logo {
+  display: block;
+  width: 160px;
+  height: auto;
+  max-height: 64px;
+  margin: 0 auto 8px;
+  object-fit: contain;
+}
+
+.login-page-title {
+  margin: 0 0 2px !important;
+  color: #1677ff !important;
+  word-break: break-word;
+  font-size: 16px !important;
+  line-height: 1.3 !important;
+}
+
+.login-page-card .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.login-page-card .ant-form-item-label {
+  padding-bottom: 2px !important;
+}
+
+.login-page-card .ant-form-item-label > label {
+  font-size: 12px;
+  height: auto;
+}
+
+.login-page-card .ant-input,
+.login-page-card .ant-input-affix-wrapper,
+.login-page-card .ant-input-affix-wrapper > input.ant-input,
+.login-page-card .ant-input-password input {
+  font-size: 12px;
+}
+
+.login-page-card .ant-input::placeholder,
+.login-page-card .ant-input-affix-wrapper > input.ant-input::placeholder,
+.login-page-card .ant-input-password input::placeholder {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.login-page-session-warn {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.login-page-session-warn-text {
+  display: block;
+  margin-bottom: 8px;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #f5f5f5;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+html[data-theme='dark'] body {
+  background-color: #212121;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .login-page {
+  background: linear-gradient(135deg, #1a1a1a 0%, #212121 50%, #2f2f2f 100%);
+}
+
+html[data-theme='dark'] .login-page--loading {
+  background: #212121;
+}
+
+html[data-theme='dark'] .login-page-card .ant-input::placeholder,
+html[data-theme='dark'] .login-page-card .ant-input-affix-wrapper > input.ant-input::placeholder,
+html[data-theme='dark'] .login-page-card .ant-input-password input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+html[data-theme='dark'] .ant-table-tbody > tr.shop-row-deactivated > td {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration-color: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .ant-table-tbody > tr.shop-row-dragging > td {
+  background: rgba(22, 119, 255, 0.2) !important;
+}
+
+html[data-theme='dark'] .shop-sort-handle {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+html[data-theme='dark'] .shop-sort-handle.is-disabled {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .admin-card-grid > .admin-col-meta {
+  border-top-color: var(--app-border);
+}
+a {
+  color: #1677ff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #4096ff;
+}
+
+/* Shop table: status row emphasis */
+.ant-table-tbody > tr.shop-row-suspended > td {
+  color: #cf1322;
+  text-decoration: line-through;
+  text-decoration-color: #cf1322;
+}
+
+.ant-table-tbody > tr.shop-row-deactivated > td {
+  color: rgba(0, 0, 0, 0.45);
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-table-tbody > tr.shop-row-dragging > td {
+  background: #e6f4ff !important;
+  opacity: 0.7;
+}
+
+.ant-table-tbody > tr.shop-row-drag-over > td {
+  box-shadow: inset 0 2px 0 #1677ff;
+}
+
+.shop-sort-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 28px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.shop-sort-handle:active {
+  cursor: grabbing;
+}
+
+.shop-sort-handle.is-disabled {
+  cursor: default;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Nav drawer / sider: thin overlay scrollbar */
+.admin-nav-drawer .ant-drawer-body,
+.admin-nav-drawer .ant-drawer-section,
+.admin-nav-drawer .ant-drawer-wrapper-body,
+.admin-sider-menu-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.admin-sider-menu-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.ant-layout-sider > .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-sider-us-clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 3px 8px;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-sider-us-clock-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  height: 16px;
+}
+
+.admin-sider-us-clock-flag {
+  display: block;
+  width: 20px;
+  height: 13px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+  border-radius: 1px;
+}
+
+.admin-sider-us-clock-time {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.admin-sider-menu-scroll:hover,
+.admin-nav-drawer .ant-drawer-body:hover,
+.admin-nav-drawer .ant-drawer-section:hover,
+.admin-nav-drawer .ant-drawer-wrapper-body:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.admin-nav-drawer .ant-drawer-body::-webkit-scrollbar,
+.admin-nav-drawer .ant-drawer-section::-webkit-scrollbar,
+.admin-nav-drawer .ant-drawer-wrapper-body::-webkit-scrollbar,
+.admin-sider-menu-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-nav-drawer .ant-drawer-body::-webkit-scrollbar-track,
+.admin-nav-drawer .ant-drawer-section::-webkit-scrollbar-track,
+.admin-nav-drawer .ant-drawer-wrapper-body::-webkit-scrollbar-track,
+.admin-sider-menu-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-nav-drawer .ant-drawer-body::-webkit-scrollbar-thumb,
+.admin-nav-drawer .ant-drawer-section::-webkit-scrollbar-thumb,
+.admin-nav-drawer .ant-drawer-wrapper-body::-webkit-scrollbar-thumb,
+.admin-sider-menu-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.admin-sider-menu-scroll:hover::-webkit-scrollbar-thumb,
+.admin-nav-drawer .ant-drawer-body:hover::-webkit-scrollbar-thumb,
+.admin-nav-drawer .ant-drawer-section:hover::-webkit-scrollbar-thumb,
+.admin-nav-drawer .ant-drawer-wrapper-body:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.admin-sider-menu-scroll:hover::-webkit-scrollbar-thumb:hover,
+.admin-nav-drawer .ant-drawer-body:hover::-webkit-scrollbar-thumb:hover,
+.admin-nav-drawer .ant-drawer-section:hover::-webkit-scrollbar-thumb:hover,
+.admin-nav-drawer .ant-drawer-wrapper-body:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/*
+ * Ant Design 6 Spin: `.ant-spin-section` đặt top:50% theo chiều cao children.
+ * Trang dài (dashboard/stats/list cache) → spinner giữa khối = dưới viewport, không nhìn thấy.
+ * Giữ căn giữa ngang; giới hạn top theo viewport (tương đương max-height nested spin bản cũ).
+ */
+.admin-page-shell .ant-spin.ant-spin-spinning > .ant-spin-section,
+.page-content-spin.ant-spin-spinning > .ant-spin-section {
+  top: min(50%, 40vh);
+}
+
+/*
+ * Ant Design 6 Message chia sẻ motion Notification: translate3d(-50%) + scale + will-change.
+ * Trên Windows layer GPU tắt ClearType → chữ toast mờ/không sắc (dễ lộ trên ListingEdit
+ * khi toast bắn lúc form invalidate/re-render). Căn giữa bằng flex/margin, bỏ scale.
+ */
+.ant-message.ant-message-top,
+.ant-message.ant-message-bottom {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  transform: none !important;
+}
+
+.ant-message-top .ant-message-notice,
+.ant-message-bottom .ant-message-notice {
+  left: 0 !important;
+  right: 0 !important;
+  width: max-content !important;
+  max-width: calc(100vw - 32px) !important;
+  margin-inline: auto !important;
+  --notification-scale: 1 !important;
+  transform: none !important;
+  will-change: auto !important;
+  backface-visibility: visible;
+}
+
+.ant-message-list-content {
+  will-change: auto !important;
+}
+
+.page-boot-spin {
+  min-height: calc(100vh - 96px);
+  min-height: calc(100dvh - 96px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Sidebar submenu: cùng nền sider, bỏ khối nền tối lồng nhau */
+.ant-layout-sider .ant-menu-dark.ant-menu-inline .ant-menu-sub.ant-menu-inline,
+.admin-nav-drawer .ant-menu-dark.ant-menu-inline .ant-menu-sub.ant-menu-inline {
+  background: transparent !important;
+}
+
+/* Collapsed sider: hẹp hơn + item/icon gọn */
+.ant-layout-sider-collapsed .ant-menu-inline-collapsed {
+  width: 100% !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-inline-collapsed > .ant-menu-item,
+.ant-layout-sider-collapsed .ant-menu-inline-collapsed > .ant-menu-submenu > .ant-menu-submenu-title {
+  height: 36px !important;
+  line-height: 36px !important;
+  margin-inline: 4px !important;
+  margin-block: 2px !important;
+  padding-inline: calc(50% - 12px) !important;
+  width: calc(100% - 8px) !important;
+  border-radius: 6px;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item .anticon,
+.ant-layout-sider-collapsed .ant-menu-submenu-title .anticon {
+  font-size: 15px !important;
+  line-height: 1 !important;
+}
+
+/* Filter toolbar — desktop: one row; mobile: search + 2-col grid + actions */
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.admin-filters-search {
+  flex: 0 1 auto;
+  width: 220px;
+  max-width: 100%;
+  min-width: 140px;
+}
+
+.admin-filters-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-filters-grid > .ant-select,
+.admin-filters-grid > .ant-picker,
+.admin-filters-grid > .ant-input,
+.admin-filters-grid > .ant-input-affix-wrapper,
+.admin-filters-grid > .ant-input-search {
+  min-width: 0;
+}
+
+/* Desktop: keep date/range inline with other filters (not a forced full row) */
+.admin-filters-span {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Push trailing control (e.g. date Segmented) to the right end of the filter row */
+.admin-filters-end {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.admin-filters-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Actions-only filter bar (Users / Platforms / …): left-aligned */
+.admin-filters:not(:has(.admin-filters-search)):not(:has(.admin-filters-grid)) .admin-filters-actions {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* List-card anatomy (ListingsPage). Entity catalogs reuse these; product pages keep thumb. */
+.app-list-header,
+.listing-list-header,
+.admin-list-header {
+  display: grid;
+  gap: 12px;
+  padding: 6px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--app-text-tertiary);
+  border-bottom: 1px solid var(--app-border);
+  align-items: center;
+}
+
+.app-list-card {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  background: var(--app-surface);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.app-list-card.is-selected,
+.app-list-card.app-list-card--selected {
+  background: var(--app-surface-selected);
+}
+
+.app-list-card.is-mobile,
+.app-list-card.app-list-card--mobile {
+  margin-bottom: 8px;
+}
+
+.app-list-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 12px;
+  background: var(--app-surface-muted);
+  border-bottom: 1px solid var(--app-border);
+  min-height: 28px;
+  height: 28px;
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.app-list-card-head--mobile {
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+}
+
+.app-list-card-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.app-list-card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.app-list-card-body,
+.admin-card-grid {
+  display: grid;
+  column-gap: 12px;
+  padding: 6px 12px;
+  align-items: start;
+}
+
+.app-list-line {
+  height: var(--app-line-h);
+  line-height: var(--app-line-h);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--app-text-secondary);
+}
+
+.app-list-line--title,
+.app-list-line--primary {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--app-text);
+}
+
+.app-list-label {
+  color: var(--app-text-tertiary);
+}
+
+.app-list-value {
+  color: var(--app-text);
+}
+
+.app-list-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-line-gap);
+}
+
+.app-list-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.app-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.app-tag-compact.ant-tag {
+  margin: 0;
+  padding-inline: 5px;
+  font-size: 11px;
+  line-height: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Dense table — match Listings 12px rhythm */
+.ant-table {
+  font-size: 12px;
+}
+
+.ant-table-thead > tr > th {
+  padding-block: 6px !important;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text-secondary);
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ant-table-tbody > tr > td .ant-typography {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ant-tag {
+  font-size: 11px;
+  line-height: 18px;
+  padding-inline: 5px;
+  border-radius: 4px;
+}
+
+/* ListingCard — source review rating (Shein) */
+.listing-rating {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--listing-text-tertiary, rgba(0, 0, 0, 0.45));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.listing-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 14px;
+}
+
+.listing-star {
+  position: relative;
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  line-height: 0;
+}
+
+.listing-star__empty {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: var(--listing-star-empty, #e8e8e8);
+}
+
+.listing-star__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 14px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.listing-star__fill svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: #faad14;
+}
+
+.listing-stars--success .listing-star__fill svg {
+  fill: #52c41a;
+}
+
+.listing-stars--warning .listing-star__fill svg {
+  fill: #faad14;
+}
+
+.listing-stars--danger .listing-star__fill svg {
+  fill: #ff4d4f;
+}
+
+.listing-rating--success .listing-rating-value {
+  color: #52c41a;
+}
+
+.listing-rating--warning .listing-rating-value {
+  color: #d48806;
+}
+
+.listing-rating--danger .listing-rating-value {
+  color: #ff4d4f;
+}
+
+.listing-rating-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
+  color: var(--listing-text-secondary, rgba(0, 0, 0, 0.65));
+  display: inline-flex;
+  align-items: center;
+}
+
+.listing-review-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  line-height: 16px;
+  height: 16px;
+  color: var(--listing-text-tertiary, rgba(0, 0, 0, 0.45));
+  display: inline-flex;
+  align-items: center;
+}
+
+/* —— Mobile / narrow viewport —— */
+@media (max-width: 767px) {
+  .admin-page-header {
+    flex-wrap: nowrap;
+  }
+
+  .admin-page-header-extra .ant-space {
+    flex-wrap: nowrap;
+  }
+
+  .admin-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .admin-filters-search {
+    width: 100%;
+    flex: none;
+    height: auto;
+    min-height: 0;
+  }
+
+  .admin-filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    flex: none;
+    width: 100%;
+  }
+
+  .admin-filters-grid > .ant-select,
+  .admin-filters-grid > .ant-picker,
+  .admin-filters-grid > .ant-input,
+  .admin-filters-grid > .ant-input-affix-wrapper,
+  .admin-filters-grid > .ant-input-search,
+  .admin-filters-grid > .admin-filters-span,
+  .admin-filters-grid > .admin-filters-span .ant-picker {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  /* Single control in the grid → full row (avoid half-empty Site select) */
+  .admin-filters-grid > .ant-select:only-child,
+  .admin-filters-grid > .ant-picker:only-child,
+  .admin-filters-grid > .ant-input:only-child,
+  .admin-filters-grid > .ant-input-affix-wrapper:only-child,
+  .admin-filters-grid > .ant-input-search:only-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Odd last select before a full-row span (e.g. Shop before Date) → full width */
+  .admin-filters-grid > .ant-select:nth-child(odd):has(+ .admin-filters-span) {
+    grid-column: 1 / -1;
+  }
+
+  .admin-filters-span {
+    grid-column: 1 / -1;
+  }
+
+  .admin-filters-date-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .admin-filters-date-row .ant-picker {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .admin-filters-date-row .ant-picker .ant-picker-input > input {
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .ant-picker-dropdown .ant-picker-panel-container {
+    max-width: calc(100vw - 24px);
+  }
+
+  .admin-filters-end {
+    margin-left: 0;
+  }
+
+  .admin-filters-between {
+    grid-column: 1 / -1;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-filters-between > .ant-btn {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-filters-actions {
+    display: flex;
+    margin-left: 0;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .admin-filters-actions > .ant-btn {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Legacy Space-based filter bars (Orders / Listings / Products) */
+  .admin-filters > .ant-space {
+    width: 100%;
+  }
+
+  .admin-filters > .ant-space .ant-input,
+  .admin-filters > .ant-space .ant-input-affix-wrapper,
+  .admin-filters > .ant-space .ant-input-search,
+  .admin-filters > .ant-space .ant-select,
+  .admin-filters > .ant-space .ant-picker {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  .admin-filters > .ant-btn {
+    margin-left: 0 !important;
+    align-self: flex-end;
+  }
+
+  .admin-status-tabs .ant-tabs-nav {
+    margin-bottom: 0;
+  }
+
+  .admin-status-tabs .ant-tabs-nav-wrap {
+    overflow-x: auto;
+  }
+
+  /* Card grids (Orders / Listings): stack essentials, hide secondary cols */
+  .admin-list-scroll {
+    overflow-x: visible !important;
+  }
+
+  .admin-list-header,
+  .admin-list-body {
+    min-width: 0 !important;
+  }
+
+  .admin-list-header,
+  .app-list-header {
+    display: none !important;
+  }
+
+  .admin-card-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .admin-card-grid > .admin-col-secondary {
+    display: none !important;
+  }
+
+  .admin-card-grid > .admin-col-meta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--app-border, var(--order-border, #f0f0f0));
+  }
+
+  .admin-table-wrap {
+    margin-inline: -4px;
+  }
+
+  .admin-table-wrap .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+    padding-bottom: 0;
+  }
+
+  .ant-drawer-content-wrapper {
+    max-width: 100vw !important;
+  }
+
+  .ant-pagination {
+    flex-wrap: wrap;
+    justify-content: center !important;
+    row-gap: 8px;
+  }
+
+  .app-list-pagination {
+    justify-content: center;
+  }
+
+  .app-list-card-head {
+    gap: 6px;
+    padding: 2px 4px 2px 10px;
+  }
+
+  .app-list-card-body {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Login: keep small control rhythm (match admin componentSize) */
+  .login-page-logo {
+    width: 140px;
+    max-height: 56px;
+    height: auto;
+  }
+
+  .login-page-card .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  .login-page-card .ant-form-item-label > label {
+    font-size: 12px;
+  }
+}
+

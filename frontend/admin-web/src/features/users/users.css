@@ -1,0 +1,83 @@
+/* Users list + create/edit/reset modals — form labels/extras Ant Design tokens don't always cover.
+   Vars on :root so Modal/Popconfirm/Select portals inherit. */
+
+:root {
+  --users-surface: var(--app-surface);
+  --users-surface-muted: var(--app-surface-muted);
+  --users-border: var(--app-border);
+  --users-text: var(--app-text);
+  --users-text-secondary: var(--app-text-secondary);
+  --users-text-tertiary: var(--app-text-tertiary);
+  --users-code-bg: rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme='dark'] {
+  --users-code-bg: rgba(255, 255, 255, 0.08);
+}
+
+/* Create/edit + reset password modals: labels, hint extras, validation explain */
+.users-edit-modal .ant-form-item-label > label,
+.users-edit-modal .ant-form-item-extra {
+  color: var(--users-text-secondary);
+}
+
+.users-edit-modal .ant-form-item-explain,
+.users-edit-modal .ant-form-item-additional {
+  color: var(--users-text-tertiary);
+}
+
+/* Proxy code chip in table — readable on dark elevated surfaces */
+.users-proxy-code.ant-typography {
+  background: var(--users-code-bg);
+  color: var(--users-text);
+  border: 1px solid var(--users-border);
+}
+
+/* Select roles dropdown + Popconfirm / Tooltip portals (outside page tree) */
+html[data-theme='dark'] .ant-select-dropdown {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-active,
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected {
+  background: rgba(22, 119, 255, 0.2);
+  color: #69b1ff;
+}
+
+html[data-theme='dark'] .ant-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  font-weight: 600;
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-inner {
+  background: #3a3a3a;
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-title,
+html[data-theme='dark'] .ant-popover .ant-popover-inner-content {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::before,
+html[data-theme='dark'] .ant-popover .ant-popover-arrow::after {
+  background: #3a3a3a;
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-inner {
+  background: #3a3a3a;
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid #424242;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::before,
+html[data-theme='dark'] .ant-tooltip .ant-tooltip-arrow::after {
+  background: #3a3a3a;
+}

@@ -1,0 +1,7 @@
+### UX danh sách (admin-web / seller-web)
+
+Các trang load dữ liệu dạng danh sách có nút **Tải lại** (`refetch` React Query) trên header/toolbar — tải lại dữ liệu hiện tại mà không cần F5.
+
+**Modal:** dùng wrapper `components/AppModal` (export tên `Modal`) thay cho `antd` `Modal` — mặc định `maskClosable={false}` + `keyboard={false}` nên **không đóng khi click mask hoặc nhấn ESC**, chỉ đóng qua nút Close (X) / Hủy. Vẫn override được bằng props tường minh (vd. modal xem ảnh/video vẫn `maskClosable`/`keyboard`). Static methods (`Modal.confirm/info/...`) pass-through nguyên bản `antd`.
+
+### Respon
