@@ -40,7 +40,7 @@ public class ReceivingBankAccountsController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<ReceivingBankAccountOptionDto>>>> GetOptions(
         CancellationToken cancellationToken)
     {
-        var result = await _service.GetOptionsForOwnerAsync(User.GetUserId(), cancellationToken);
+        var result = await _service.GetOptionsForOwnerAsync(User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<List<ReceivingBankAccountOptionDto>>.Ok(result));
     }
 
@@ -63,7 +63,7 @@ public class ReceivingBankAccountsController : ControllerBase
         var result = await _service.GetTransactionsAsync(
             new ReceivingBankTransactionQuery
             {
-                OwnerUserId = User.GetUserId(),
+                OwnerUserId = User.GetOwnerId(),
                 ReceivingBankAccountId = receivingBankAccountId,
                 ShopId = shopId,
                 OrderId = orderId,
@@ -87,7 +87,7 @@ public class ReceivingBankAccountsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _createTxnValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var userId = User.GetUserId();
+        var userId = User.GetOwnerId();
         request.Direction = "Credit";
         var result = await _service.CreateTransactionAsync(
             request,
@@ -108,7 +108,7 @@ public class ReceivingBankAccountsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _updateTxnValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var userId = User.GetUserId();
+        var userId = User.GetOwnerId();
         request.Direction = "Credit";
         var result = await _service.UpdateTransactionAsync(id, request, cancellationToken, ownerUserId: userId);
         return Ok(ApiResponse<ReceivingBankTransactionDto>.Ok(result, "Cập nhật giao dịch thành công."));
@@ -122,7 +122,7 @@ public class ReceivingBankAccountsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        await _service.DeleteTransactionAsync(id, cancellationToken, ownerUserId: User.GetUserId());
+        await _service.DeleteTransactionAsync(id, cancellationToken, ownerUserId: User.GetOwnerId());
         return Ok(ApiResponse<object>.Ok(null, "Xóa giao dịch thành công."));
     }
 }

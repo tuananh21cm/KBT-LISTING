@@ -90,6 +90,12 @@ public interface IShopService
     Task<AdminShopDto> UpdateForAdminAsync(Guid shopId, UpdateAdminShopDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Hands a shop to another seller (owner cascade + operational period) in one transaction, touching nothing else.
+    /// Used by CRM sync; admin UI goes through <see cref="UpdateForAdminAsync"/>.
+    /// </summary>
+    Task TransferOwnerAsync(Guid shopId, Guid newOwnerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Backfill: move Orders/Listings (and denorm) still owned by another seller onto the shop's current owner.
     /// Use after a historical owner change that did not cascade.
     /// </summary>

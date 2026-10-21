@@ -103,6 +103,6 @@ public class DashboardController : ControllerBase
 
     private void ScopeToCurrentUser(DashboardQuery query)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
     }
 }

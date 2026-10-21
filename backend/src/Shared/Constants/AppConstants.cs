@@ -19,6 +19,13 @@ public static class ClaimConstants
     /// ASP.NET Identity security stamp — invalidated on password change / account revoke.
     /// </summary>
     public const string SecurityStamp = "ss";
+
+    /// <summary>
+    /// Data-owner id: the team account a member belongs to (<c>ApplicationUser.TeamOwnerId</c>), or the user itself.
+    /// Seller-scoped controllers filter by this, not by <see cref="UserId"/>.
+    /// </summary>
+    // Not "oid": JwtBearer's inbound claim map rewrites that to a Microsoft URI and FindFirst("oid") misses.
+    public const string OwnerId = "owner";
 }
 
 /// <summary>

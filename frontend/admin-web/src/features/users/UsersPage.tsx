@@ -391,6 +391,7 @@ export const UsersPage = () => {
         ),
     },
     { title: 'Username', dataIndex: 'userName', key: 'userName' },
+    { title: 'Tổ', dataIndex: 'teamOwnerUserName', key: 'teamOwnerUserName', render: (v) => v || '—' },
     { title: 'Email', dataIndex: 'email', key: 'email', render: (v) => v || '—' },
     {
       title: 'Vai trò',

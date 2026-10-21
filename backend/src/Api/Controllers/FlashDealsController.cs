@@ -36,7 +36,7 @@ public class FlashDealsController : ControllerBase
         [FromQuery] ProductDiscountListQuery query,
         CancellationToken cancellationToken)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
         query.DiscountType = PromotionDiscountTypes.FlashSale;
         var result = await _syncService.ListAsync(query, cancellationToken);
         return Ok(ApiResponse<ProductDiscountListPageDto>.Ok(result));
@@ -50,10 +50,10 @@ public class FlashDealsController : ControllerBase
     {
         var body = new ProductDiscountSyncRequest
         {
-            OwnerUserId = User.GetUserId(),
+            OwnerUserId = User.GetOwnerId(),
             DiscountType = PromotionDiscountTypes.FlashSale
         };
-        var job = _jobRunner.Start(body, User.GetUserId());
+        var job = _jobRunner.Start(body, User.GetOwnerId());
         return Accepted(ApiResponse<ProductDiscountSyncJobStatusDto>.Ok(job, "Đã bắt đầu đồng bộ Flash Deal."));
     }
 
@@ -64,7 +64,7 @@ public class FlashDealsController : ControllerBase
     public ActionResult<ApiResponse<ProductDiscountSyncJobStatusDto>> SyncStatus(Guid jobId)
     {
         var startedBy = _jobRunner.GetStartedByUserId(jobId);
-        if (startedBy is null || startedBy.Value != User.GetUserId())
+        if (startedBy is null || startedBy.Value != User.GetOwnerId())
         {
             return NotFound(ApiResponse<ProductDiscountSyncJobStatusDto>.Fail(
                 "Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
@@ -90,7 +90,7 @@ public class FlashDealsController : ControllerBase
     {
         await _syncService.DeactivateAsync(
             id,
-            restrictOwnerUserId: User.GetUserId(),
+            restrictOwnerUserId: User.GetOwnerId(),
             requiredDiscountType: PromotionDiscountTypes.FlashSale,
             cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Đã deactivate Flash Deal."));

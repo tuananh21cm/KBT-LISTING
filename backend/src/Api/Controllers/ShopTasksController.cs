@@ -36,7 +36,7 @@ public class ShopTasksController : ControllerBase
         [FromQuery] ShopTaskBoardQuery query,
         CancellationToken cancellationToken)
     {
-        var result = await _shopTaskService.GetBoardAsync(User.GetUserId(), query, cancellationToken);
+        var result = await _shopTaskService.GetBoardAsync(User.GetOwnerId(), query, cancellationToken);
         return Ok(ApiResponse<ShopTaskBoardDto>.Ok(result));
     }
 
@@ -49,7 +49,7 @@ public class ShopTasksController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _shopTaskService.GetExtensionPlanAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             externalShopId,
             cancellationToken);
         return Ok(ApiResponse<ShopTaskExtensionPlanDto>.Ok(result));
@@ -63,7 +63,7 @@ public class ShopTasksController : ControllerBase
         [FromBody] RecordShopTaskVisitDto request,
         CancellationToken cancellationToken)
     {
-        await _shopTaskService.RecordVisitAsync(User.GetUserId(), request, cancellationToken);
+        await _shopTaskService.RecordVisitAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Đã ghi nhận nhiệm vụ."));
     }
 
@@ -75,7 +75,7 @@ public class ShopTasksController : ControllerBase
         [FromBody] MarkShopHealthRecordHandledDto request,
         CancellationToken cancellationToken)
     {
-        await _healthRecords.MarkHandledAsync(User.GetUserId(), request, cancellationToken);
+        await _healthRecords.MarkHandledAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Đã đánh dấu xử lý."));
     }
 }

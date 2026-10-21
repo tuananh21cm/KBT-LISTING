@@ -13,7 +13,7 @@ import {
   message,
   theme,
 } from 'antd';
-import { CopyOutlined, LinkOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { CloudDownloadOutlined, CopyOutlined, LinkOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { formatDateTimeVn, tablePagination } from '@drop/utils';
 import { Modal, NAV_LABEL, PageHeader, PlatformAvatar, useIsMobile } from '@drop/ui';
@@ -182,6 +182,7 @@ export const FourSellerConnectPage = ({ config }: SharedFourSellerConnectPagePro
   const authRedirect = deps.useAuthRedirect();
   const checkConnection = deps.useCheckConnection();
   const syncShops = deps.useSyncShops();
+  const syncFromCrm = deps.useSyncFromCrm?.();
   const canManage = deps.hasPermission(config.managePermission);
 
   const [filters, setFilters] = useState<ShopFilters>(defaultFilters);
@@ -442,14 +443,25 @@ export const FourSellerConnectPage = ({ config }: SharedFourSellerConnectPagePro
         title={NAV_LABEL.fourseller}
         extra={
           canManage ? (
-            <Button
-              type="primary"
-              icon={<SyncOutlined />}
-              loading={syncShops.isPending}
-              onClick={() => void syncShops.mutateAsync()}
-            >
-              {isMobile ? null : 'Đồng bộ'}
-            </Button>
+            <Space>
+              {syncFromCrm ? (
+                <Button
+                  icon={<CloudDownloadOutlined />}
+                  loading={syncFromCrm.isPending}
+                  onClick={() => void syncFromCrm.mutateAsync()}
+                >
+                  {isMobile ? null : 'Đồng bộ từ CRM'}
+                </Button>
+              ) : null}
+              <Button
+                type="primary"
+                icon={<SyncOutlined />}
+                loading={syncShops.isPending}
+                onClick={() => void syncShops.mutateAsync()}
+              >
+                {isMobile ? null : 'Đồng bộ'}
+              </Button>
+            </Space>
           ) : undefined
         }
       />

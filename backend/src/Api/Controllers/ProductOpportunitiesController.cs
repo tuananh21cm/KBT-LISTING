@@ -32,7 +32,7 @@ public class ProductOpportunitiesController : ControllerBase
         [FromQuery] ProductOpportunityListQuery query,
         CancellationToken cancellationToken)
     {
-        query.OwnerId = User.GetUserId();
+        query.OwnerId = User.GetOwnerId();
         var result = await _service.ListAsync(query, cancellationToken);
         return Ok(ApiResponse<ProductOpportunityListPageDto>.Ok(result));
     }
@@ -47,7 +47,7 @@ public class ProductOpportunitiesController : ControllerBase
     {
         var result = await _service.BulkDeleteAsync(
             request?.Ids ?? [],
-            User.GetUserId(),
+            User.GetOwnerId(),
             request?.ShopId,
             cancellationToken);
         return Ok(ApiResponse<BulkDeleteProductOpportunitiesResultDto>.Ok(
@@ -64,7 +64,7 @@ public class ProductOpportunitiesController : ControllerBase
         [FromBody] SetProductOpportunitySavedRequest request,
         CancellationToken cancellationToken)
     {
-        var actorId = User.GetUserId();
+        var actorId = User.GetOwnerId();
         var result = await _service.SetSavedAsync(
             id,
             request?.Saved ?? false,
@@ -87,7 +87,7 @@ public class ProductOpportunitiesController : ControllerBase
         [FromQuery] Guid shopId,
         CancellationToken cancellationToken)
     {
-        var result = await _service.ListSavedKeywordsAsync(shopId, User.GetUserId(), cancellationToken);
+        var result = await _service.ListSavedKeywordsAsync(shopId, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<SavedKeywordListDto>.Ok(result));
     }
 
@@ -102,7 +102,7 @@ public class ProductOpportunitiesController : ControllerBase
         [FromBody] SetSavedKeywordRequest request,
         CancellationToken cancellationToken)
     {
-        var actorId = User.GetUserId();
+        var actorId = User.GetOwnerId();
         var result = await _service.SetSavedByKeywordAsync(
             request?.ShopId ?? Guid.Empty,
             request?.Keyword ?? string.Empty,
@@ -123,7 +123,7 @@ public class ProductOpportunitiesController : ControllerBase
         [FromQuery] Guid shopId,
         CancellationToken cancellationToken)
     {
-        var result = await _research.GetCachedAsync(shopId, User.GetUserId(), cancellationToken);
+        var result = await _research.GetCachedAsync(shopId, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<ShopKeywordResearchDto>.Ok(result));
     }
 
@@ -140,7 +140,7 @@ public class ProductOpportunitiesController : ControllerBase
     {
         var result = await _research.ResearchAsync(
             request?.ShopId ?? Guid.Empty,
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<ShopKeywordResearchDto>.Ok(result));
     }

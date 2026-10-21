@@ -37,7 +37,7 @@ public class FilesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<FileDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<FileDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        var result = await _fileService.GetAllAsync(User.GetUserId(), cancellationToken);
+        var result = await _fileService.GetAllAsync(User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<List<FileDto>>.Ok(result));
     }
 
@@ -49,7 +49,7 @@ public class FilesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<FileDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<FileDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _fileService.GetByIdAsync(User.GetUserId(), id, cancellationToken);
+        var result = await _fileService.GetByIdAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<FileDto>.Ok(result));
     }
 
@@ -68,7 +68,7 @@ public class FilesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _fileService.UploadAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             file,
             linkedEntityType,
             linkedEntityId,
@@ -90,7 +90,7 @@ public class FilesController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _checkDuplicateValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _fileService.CheckDuplicateAsync(User.GetUserId(), request.FileHash, cancellationToken);
+        var result = await _fileService.CheckDuplicateAsync(User.GetOwnerId(), request.FileHash, cancellationToken);
         return Ok(ApiResponse<FileDto?>.Ok(result));
     }
 
@@ -102,7 +102,7 @@ public class FilesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _fileService.DeleteAsync(User.GetUserId(), id, cancellationToken);
+        await _fileService.DeleteAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Xóa file thành công."));
     }
 }

@@ -62,6 +62,12 @@ public class UserService : IUserService
         var roles = await _userManager.GetRolesAsync(user);
         var permissions = await _tokenService.GetUserPermissionsAsync(userId, cancellationToken);
 
+        // A team member works on the team account's data, so the 4Seller cookie it sees is the team's.
+        var teamOwner = user.TeamOwnerId is Guid teamOwnerId
+            ? await _userManager.FindByIdAsync(teamOwnerId.ToString())
+            : null;
+        var cookieHolder = teamOwner ?? user;
+
         return new CurrentUserDto
         {
             Id = dto.Id,
@@ -70,9 +76,10 @@ public class UserService : IUserService
             FullName = dto.FullName,
             Roles = roles.ToList(),
             Permissions = permissions,
-            HasFourSellerCookie = !string.IsNullOrWhiteSpace(user.FourSellerCookie),
-            FourSellerCookieLoginStatus = ResolveLoginStatus(user),
+            HasFourSellerCookie = !string.IsNullOrWhiteSpace(cookieHolder.FourSellerCookie),
+            FourSellerCookieLoginStatus = ResolveLoginStatus(cookieHolder),
             Theme = UiThemeModes.Normalize(user.Theme),
+            TeamOwnerUserName = teamOwner?.UserName,
         };
     }
 
@@ -318,11 +325,14 @@ public class UserService : IUserService
             .OrderByDescending(u => u.CreatedAt)
             .ToListAsync(cancellationToken);
 
+        var userNameById = users.ToDictionary(u => u.Id, u => u.UserName);
         var result = new List<AdminUserDto>();
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
-            result.Add(MapToAdminUserDto(user, roles));
+            var dto = MapToAdminUserDto(user, roles);
+            dto.TeamOwnerUserName = user.TeamOwnerId is Guid teamOwnerId ? userNameById.GetValueOrDefault(teamOwnerId) : null;
+            result.Add(dto);
         }
 
         return result;

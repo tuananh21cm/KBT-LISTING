@@ -59,6 +59,7 @@ public class TokenService : ITokenService
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(ClaimConstants.UserId, user.Id.ToString()),
             new(ClaimConstants.SecurityStamp, user.SecurityStamp ?? string.Empty),
+            new(ClaimConstants.OwnerId, (user.TeamOwnerId ?? user.Id).ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

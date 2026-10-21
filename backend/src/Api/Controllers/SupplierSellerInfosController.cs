@@ -49,5 +49,5 @@ public class SupplierSellerInfosController : ControllerBase
     }
 
     private void ScopeToCurrentUser(SupplierSellerListQuery query) =>
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
 }

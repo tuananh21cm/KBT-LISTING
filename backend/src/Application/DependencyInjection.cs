@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IShopService, ShopService>();
         services.AddScoped<IShopOwnershipTransferService, ShopOwnershipTransferService>();
+        services.AddScoped<IKbtCrmOrgSyncService, KbtCrmOrgSyncService>();
         services.AddScoped<IShopFinanceService, ShopFinanceService>();
         services.AddScoped<ICompanyLedgerService, CompanyLedgerService>();
         services.AddScoped<IAgeRangeService, AgeRangeService>();

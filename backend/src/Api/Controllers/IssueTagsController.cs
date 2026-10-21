@@ -44,7 +44,7 @@ public class IssueTagsController : ControllerBase
     {
         var result = await _issueTags.CreateLibraryTagAsync(
             request ?? new CreateIssueTagRequest(),
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<IssueTagDto>.Ok(result, "Đã thêm tag."));
     }
@@ -90,7 +90,7 @@ public class IssueTagsController : ControllerBase
         await _issueTags.SetOrderTagsAsync(
             id,
             request ?? new SetOrderIssueTagsRequest(),
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         var detail = await _orders.GetByIdAsync(id, cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(detail, "Đã cập nhật tag lỗi."));
@@ -109,7 +109,7 @@ public class IssueTagsController : ControllerBase
         await _issueTags.SetOrderStatusAsync(
             id,
             request ?? new SetOrderIssueStatusRequest(),
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         var detail = await _orders.GetByIdAsync(id, cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(detail, "Đã cập nhật trạng thái lỗi."));
@@ -118,7 +118,7 @@ public class IssueTagsController : ControllerBase
     private async Task EnsureOwnedAsync(Guid orderId, CancellationToken cancellationToken)
     {
         var detail = await _orders.GetByIdAsync(orderId, cancellationToken);
-        if (detail.OwnerId != User.GetUserId())
+        if (detail.OwnerId != User.GetOwnerId())
         {
             throw new NotFoundException("Không tìm thấy đơn hàng.");
         }

@@ -1,3 +1,4 @@
+using Api.Extensions;
 using Application.DTOs.Auth;
 using Application.DTOs.FourSeller;
 using Application.Interfaces;
@@ -172,7 +173,7 @@ public class AuthController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _fourSellerCookieValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var userId = GetCurrentUserId();
+        var userId = User.GetOwnerId();
         var hasCookie = await _userService.UpdateFourSellerCookieAsync(userId, request, cancellationToken);
         var loginStatus = hasCookie
             ? FourSellerCookieLoginStatuses.Unchecked
@@ -196,7 +197,7 @@ public class AuthController : ControllerBase
         [FromBody] FourSellerLoginCheckRequest? request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = User.GetOwnerId();
         var checkingDraft = !string.IsNullOrWhiteSpace(request?.FourSellerCookie);
         var result = await _fourSellerApiService.CheckLoginAsync(
             userId,

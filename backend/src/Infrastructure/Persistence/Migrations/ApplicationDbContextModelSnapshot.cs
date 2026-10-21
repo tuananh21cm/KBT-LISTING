@@ -193,6 +193,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TeamOwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Theme")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -221,6 +224,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("TeamOwnerId");
 
                     b.HasIndex("UserName")
                         .IsUnique();
@@ -5167,6 +5172,14 @@ namespace Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Domain.Entities.ApplicationRole", b =>
                 {
                     b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("Domain.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("TeamOwnerId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>

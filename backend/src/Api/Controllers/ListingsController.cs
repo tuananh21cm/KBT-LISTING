@@ -77,7 +77,7 @@ public class ListingsController : ControllerBase
     {
         var items = await _listingSyncService.GetAutoPublishQueueStatusAsync(
             ids,
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<ListingAutoPublishQueueStatusBatchDto>.Ok(new ListingAutoPublishQueueStatusBatchDto
         {
@@ -95,7 +95,7 @@ public class ListingsController : ControllerBase
         [FromQuery] ListingAnalyticsListQuery query,
         CancellationToken cancellationToken)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
         var result = await _listingAnalytics.ListAsync(query, cancellationToken);
         return Ok(ApiResponse<ListingAnalyticsPageDto>.Ok(result));
     }
@@ -111,7 +111,7 @@ public class ListingsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _listingAnalytics.GetSnapshotDatesAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             shopId,
             cancellationToken);
         return Ok(ApiResponse<ListingAnalyticsDatesDto>.Ok(result));
@@ -128,7 +128,7 @@ public class ListingsController : ControllerBase
         [FromQuery] ListingDelistSuggestionQuery query,
         CancellationToken cancellationToken)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
         var result = await _delistSuggestions.SuggestAsync(query, cancellationToken);
         return Ok(ApiResponse<ListingDelistSuggestionDto>.Ok(result));
     }
@@ -146,7 +146,7 @@ public class ListingsController : ControllerBase
         [FromQuery] string? fourSellerShopIds = null,
         CancellationToken cancellationToken = default)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var shopIds = ListingRecentQuery.ParseFourSellerShopIds(fourSellerShopIds);
         var page = await _listingSyncService.ListRecentListingsAsync(
             ownerId,
@@ -168,7 +168,7 @@ public class ListingsController : ControllerBase
         [FromQuery] string? fourSellerShopIds = null,
         CancellationToken cancellationToken = default)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var shopIds = ListingRecentQuery.ParseFourSellerShopIds(fourSellerShopIds);
         var counts = await _listingSyncService.GetTabCountsAsync(ownerId, shopIds, cancellationToken);
         return Ok(ApiResponse<ListingTabCountsDto>.Ok(counts));
@@ -183,7 +183,7 @@ public class ListingsController : ControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<AddedSourceShopDto>>>> ListAddedSourceShops(
         CancellationToken cancellationToken = default)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var items = await _listingSyncService.ListOwnedAddedSourceShopsAsync(ownerId, 5000, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AddedSourceShopDto>>.Ok(items));
     }
@@ -203,7 +203,7 @@ public class ListingsController : ControllerBase
         if (refresh)
         {
             result = await _listingSyncService.GetByIdAsync(id, true, cancellationToken);
-            if (result.OwnerId != User.GetUserId())
+            if (result.OwnerId != User.GetOwnerId())
             {
                 throw new NotFoundException("Không tìm thấy listing.");
             }
@@ -222,11 +222,11 @@ public class ListingsController : ControllerBase
     public ActionResult<ApiResponse<ListingSyncJobStatusDto>> Sync([FromBody] ListingSyncRequest? request)
     {
         var body = request ?? new ListingSyncRequest();
-        body.OwnerUserId = User.GetUserId();
+        body.OwnerUserId = User.GetOwnerId();
         body.SyncSource = ListingSyncSources.Manual;
         body.ApplyDefaults();
 
-        var job = _listingSyncJobRunner.Start(body, User.GetUserId());
+        var job = _listingSyncJobRunner.Start(body, User.GetOwnerId());
         return Accepted(ApiResponse<ListingSyncJobStatusDto>.Ok(job, "Đã bắt đầu đồng bộ listing."));
     }
 
@@ -244,7 +244,7 @@ public class ListingsController : ControllerBase
             return NotFound(ApiResponse<ListingSyncJobStatusDto>.Fail("Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
         }
 
-        if (_listingSyncJobRunner.GetStartedByUserId(jobId) != User.GetUserId())
+        if (_listingSyncJobRunner.GetStartedByUserId(jobId) != User.GetOwnerId())
         {
             return NotFound(ApiResponse<ListingSyncJobStatusDto>.Fail("Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
         }
@@ -661,7 +661,7 @@ public class ListingsController : ControllerBase
         [FromBody] BulkDeleteListingsRequest request,
         CancellationToken cancellationToken)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var ownedIds = new List<Guid>();
         foreach (var id in (request.Ids ?? []).Where(x => x != Guid.Empty).Distinct())
         {
@@ -698,7 +698,7 @@ public class ListingsController : ControllerBase
         [FromBody] BulkDeleteListingsRequest request,
         CancellationToken cancellationToken)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var ownedIds = new List<Guid>();
         foreach (var id in (request.Ids ?? []).Where(x => x != Guid.Empty).Distinct())
         {
@@ -741,13 +741,13 @@ public class ListingsController : ControllerBase
 
     private void ScopeListToCurrentUser(ListingListQuery query)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
     }
 
     private async Task<ListingDetailDto> EnsureOwnedAsync(Guid id, CancellationToken cancellationToken)
     {
         var detail = await _listingSyncService.GetByIdAsync(id, false, cancellationToken);
-        if (detail.OwnerId != User.GetUserId())
+        if (detail.OwnerId != User.GetOwnerId())
         {
             throw new NotFoundException("Không tìm thấy listing.");
         }

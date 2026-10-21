@@ -941,6 +941,15 @@ public class DataSeeder
                 "Giữ lịch sử online shop (ngày)",
                 DataRetentionSettingKeys.DefaultShopOnlineSessionDays, "number",
                 "Xoá ShopOnlineSessions cũ hơn N ngày (theo EndedAt/LastSeenAt). 0 = không dọn"),
+            (KbtCrmSyncSettingKeys.Group, KbtCrmSyncSettingKeys.Enabled, "Tự động đồng bộ từ CRM", "false", "boolean",
+                "Job nền kéo GET /agent/org từ KBT CRM: tổ → tài khoản tổ (chủ shop) + thành viên, shop theo mã shop TikTok. Thay cho import Excel."),
+            (KbtCrmSyncSettingKeys.Group, KbtCrmSyncSettingKeys.IntervalMinutes, "Chu kỳ đồng bộ (phút)",
+                KbtCrmSyncSettingKeys.DefaultIntervalMinutes.ToString(), "number",
+                $"Số phút giữa hai lần kéo ({KbtCrmSyncSettingKeys.MinIntervalMinutes}–{KbtCrmSyncSettingKeys.MaxIntervalMinutes})"),
+            (KbtCrmSyncSettingKeys.Group, KbtCrmSyncSettingKeys.BaseUrl, "CRM API base URL", KbtCrmSyncSettingKeys.DefaultBaseUrl, "text",
+                "Gốc API CRM, không kèm /agent/org. Prod bắt buộc có /api-proxy (vd https://apps.kbt.global/api-proxy); local http://localhost:3002"),
+            (KbtCrmSyncSettingKeys.Group, KbtCrmSyncSettingKeys.AgentSecret, "x-agent-secret", "", "password",
+                "Giá trị AGENT_BRIDGE_SECRET của CRM. Trống = không đồng bộ được."),
         };
 
         foreach (var (group, key, label, value, type, description) in defaults)

@@ -341,6 +341,7 @@ Một hệ thống Identity dùng chung cho toàn bộ nền tảng với RBAC (
 - **Thu hồi session**: Đổi/reset mật khẩu hoặc inactive user → `UpdateSecurityStamp` + revoke toàn bộ refresh tokens; refresh cũng từ chối user inactive
 - **Admin portal access**: Role `Admin` hoặc bất kỳ permission `admin.*.view`
 - **Role Fulfil** (seed): `admin.orders.view`, `admin.orders.manage`, `admin.product-sources.view` — dùng extension KBT Fulfil (đi đơn); có thể vào admin-web vì có `admin.*.view`
+- **Tổ / TeamOwnerId** (2026-10-21): `ApplicationUser.TeamOwnerId` trỏ tới tài khoản tổ. `TokenService` phát claim `owner = TeamOwnerId ?? Id`; `ClaimsPrincipalExtensions.GetOwnerId()` đọc claim này và **mọi controller seller-scoped** dùng nó thay `GetUserId()` (giữ `GetUserId()` cho đổi mật khẩu/theme/actor). Một shop vẫn chỉ có một `OwnerId` = tài khoản tổ; thành viên không sở hữu dữ liệu riêng. Cookie 4Seller nằm trên tài khoản tổ (member dán cookie ở `/profile` → ghi vào tài khoản tổ). Không đặt tên claim là `oid`: JwtBearer map inbound `oid` sang URI Microsoft nên `FindFirst("oid")` trượt.
 
 ## Admin Web Modules
 
@@ -1116,6 +1117,11 @@ Module thanh toán / mua hàng supplier (admin-web only).
 | `seller.shops.view` / `seller.shops.edit` | Xem / sửa shop được cấp |
 | `seller.products.view` / `seller.products.manage` | Xem / sync / edit / push listings + scrape post-html (catalog `/products` đã gỡ) |
 | `seller.shop_tasks.view` | Xem bảng Nhiệm vụ hệ thống của shop mình |
+
+## Tích hợp KBT CRM (đồng bộ tổ / user / shop)
+
+Thay cho import Excel. `IKbtCrmClient` (typed HttpClient, `Infrastructure/Integrations/KbtCrm`) gọi `GET {base_url}/agent/org` với `x-agent-secret`; base URL + secret đọc từ Settings mỗi lần gọi. `KbtCrmOrgSyncService` (Application) map: tổ → tài khoản tổ (chủ shop) + thành viên (`TeamOwnerId`), shop theo `shop_code` ↔ `Shop.ShopCode`; đổi chủ qua `IShopService.TransferOwnerAsync`. Job `KbtCrmOrgSyncBackgroundService` tick 1 phút, chạy khi `kbtcrm.sync.enabled` và đã qua `interval_minutes` (stamp trước khi chạy để CRM chết không retry mỗi phút). Nút **Đồng bộ từ CRM** ở `/fourseller` admin (`useKbtCrmSync` → `POST /admin/kbtcrm/sync`), kết quả `skipped[]` hiện modal. Dữ liệu CRM nhỏ (~1.9k shop, ~130 user) nên luôn kéo full; CRM cache endpoint 10 phút. Chi tiết quy tắc map xem `docs/api.md` → Admin KBT CRM Endpoints.
+
 
 ## Mở rộng
 

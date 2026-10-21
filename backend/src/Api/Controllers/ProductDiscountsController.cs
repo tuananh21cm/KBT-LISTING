@@ -35,7 +35,7 @@ public class ProductDiscountsController : ControllerBase
         [FromQuery] ProductDiscountListQuery query,
         CancellationToken cancellationToken)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
         var result = await _syncService.ListAsync(query, cancellationToken);
         return Ok(ApiResponse<ProductDiscountListPageDto>.Ok(result));
     }
@@ -46,8 +46,8 @@ public class ProductDiscountsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ProductDiscountSyncJobStatusDto>), StatusCodes.Status202Accepted)]
     public ActionResult<ApiResponse<ProductDiscountSyncJobStatusDto>> Sync()
     {
-        var body = new ProductDiscountSyncRequest { OwnerUserId = User.GetUserId() };
-        var job = _jobRunner.Start(body, User.GetUserId());
+        var body = new ProductDiscountSyncRequest { OwnerUserId = User.GetOwnerId() };
+        var job = _jobRunner.Start(body, User.GetOwnerId());
         return Accepted(ApiResponse<ProductDiscountSyncJobStatusDto>.Ok(job, "Đã bắt đầu đồng bộ Product Discount."));
     }
 
@@ -58,7 +58,7 @@ public class ProductDiscountsController : ControllerBase
     public ActionResult<ApiResponse<ProductDiscountSyncJobStatusDto>> SyncStatus(Guid jobId)
     {
         var startedBy = _jobRunner.GetStartedByUserId(jobId);
-        if (startedBy is null || startedBy.Value != User.GetUserId())
+        if (startedBy is null || startedBy.Value != User.GetOwnerId())
         {
             return NotFound(ApiResponse<ProductDiscountSyncJobStatusDto>.Fail(
                 "Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
@@ -84,7 +84,7 @@ public class ProductDiscountsController : ControllerBase
     {
         await _syncService.DeactivateAsync(
             id,
-            restrictOwnerUserId: User.GetUserId(),
+            restrictOwnerUserId: User.GetOwnerId(),
             cancellationToken: cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Đã deactivate Product Discount."));
     }

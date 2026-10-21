@@ -61,7 +61,7 @@ public class FourSellerController : ControllerBase
         Guid shopId,
         CancellationToken cancellationToken)
     {
-        var shop = await _shopService.GetByIdAsync(User.GetUserId(), shopId, cancellationToken);
+        var shop = await _shopService.GetByIdAsync(User.GetOwnerId(), shopId, cancellationToken);
 
         var request = new FourSellerAuthRedirectRequest
         {
@@ -72,7 +72,7 @@ public class FourSellerController : ControllerBase
         };
 
         var result = await _fourSellerApiService.GetAuthRedirectUrlAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             request,
             cancellationToken);
         return Ok(ApiResponse<FourSellerAuthRedirectResponse>.Ok(result));
@@ -88,7 +88,7 @@ public class FourSellerController : ControllerBase
         Guid shopId,
         CancellationToken cancellationToken)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var shop = await _shopService.GetByIdAsync(ownerId, shopId, cancellationToken);
 
         var request = new FourSellerShopCheckRequest
@@ -129,7 +129,7 @@ public class FourSellerController : ControllerBase
     public async Task<ActionResult<ApiResponse<FourSellerSyncResponse>>> SyncOwnedShops(
         CancellationToken cancellationToken)
     {
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
         var login = await _fourSellerApiService.CheckLoginAsync(ownerId, null, cancellationToken);
         if (!login.IsLoggedIn)
         {
@@ -161,7 +161,7 @@ public class FourSellerController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _listingImportService.GetPageAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             platform,
             request,
             cancellationToken);
@@ -180,7 +180,7 @@ public class FourSellerController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _listingImportService.DeleteAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             platform,
             request,
             cancellationToken);
@@ -202,7 +202,7 @@ public class FourSellerController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _postHtmlValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var ownerId = User.GetUserId();
+        var ownerId = User.GetOwnerId();
 
         // Persist supplier PDP metrics locally even if 4Seller post-html fails later.
         await _supplierProductInfoService.UpsertFromUrlAsync(

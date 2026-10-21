@@ -33,6 +33,8 @@ export type FourSellerDeps = {
     'mutateAsync' | 'isPending'
   >;
   useSyncShops: () => Pick<UseMutationResult<unknown, unknown, void>, 'mutateAsync' | 'isPending'>;
+  /** Admin only — pull teams/users/shops from KBT CRM (POST /admin/kbtcrm/sync). */
+  useSyncFromCrm?: () => Pick<UseMutationResult<unknown, unknown, void>, 'mutateAsync' | 'isPending'>;
   hasPermission: (permission: string) => boolean;
 };
 

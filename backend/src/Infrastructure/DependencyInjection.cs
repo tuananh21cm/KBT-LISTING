@@ -82,6 +82,11 @@ public static class DependencyInjection
                 var timeout = settings.TimeoutSeconds > 0 ? settings.TimeoutSeconds : 60;
                 client.Timeout = TimeSpan.FromSeconds(timeout);
             });
+        // KBT CRM agent bridge — base URL + secret come from Settings per call, so only the timeout lives here.
+        services.AddHttpClient<IKbtCrmClient, Integrations.KbtCrm.KbtCrmClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(60);
+            });
         services.AddSingleton<IUspsScanPushGate, UspsScanPushGate>();
 
         // OpenAI may geo-block VN egress — optional OpenAI:Proxy tunnels chat/completions.
@@ -259,6 +264,7 @@ public static class DependencyInjection
         services.AddHostedService<OrderDailySummaryBackgroundService>();
         services.AddHostedService<OrderWorkflowSignalsVerifyBackgroundService>();
         services.AddHostedService<FourSellerCookieRecheckBackgroundService>();
+        services.AddHostedService<Integrations.KbtCrm.KbtCrmOrgSyncBackgroundService>();
         services.AddHostedService<UspsScanAutoPushBackgroundService>();
         services.AddHostedService<Persistence.DataRetentionBackgroundService>();
         services.AddHostedService<Integrations.Telegram.SyncWatchdogBackgroundService>();

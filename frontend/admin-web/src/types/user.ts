@@ -17,6 +17,8 @@ export interface AdminUser {
   fourSellerProxy?: string | null;
   /** Whether a Fulfil extension PIN is configured (value never returned). */
   hasFulfilPin: boolean;
+  /** Username của tài khoản tổ (CRM); null = tự quản dữ liệu. */
+  teamOwnerUserName?: string | null;
 }
 
 export interface CreateAdminUserRequest {

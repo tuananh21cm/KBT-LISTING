@@ -57,6 +57,12 @@ public class ApplicationUser : IdentityUser<Guid>
     public string? FulfilPinHash { get; set; }
 
     /// <summary>
+    /// Team account this user belongs to (CRM "tổ"). When set, every seller-scoped query uses the team
+    /// account as owner, so all members of a team see the same shops/orders/listings. Null = owns its own data.
+    /// </summary>
+    public Guid? TeamOwnerId { get; set; }
+
+    /// <summary>
     /// Navigation to refresh tokens.
     /// </summary>
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];

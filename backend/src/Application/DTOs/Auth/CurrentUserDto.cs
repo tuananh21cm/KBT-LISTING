@@ -49,4 +49,7 @@ public class CurrentUserDto
     /// UI appearance preference: <c>light</c> or <c>dark</c>.
     /// </summary>
     public string Theme { get; set; } = "light";
+
+    /// <summary>Username of the team account this user works under (null = owns its own data).</summary>
+    public string? TeamOwnerUserName { get; set; }
 }

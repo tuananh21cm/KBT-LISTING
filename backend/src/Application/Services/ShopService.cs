@@ -946,6 +946,33 @@ public class ShopService : IShopService
     }
 
     /// <inheritdoc />
+    public async Task TransferOwnerAsync(Guid shopId, Guid newOwnerId, CancellationToken cancellationToken = default)
+    {
+        var shop = await _context.Shops.FirstOrDefaultAsync(s => s.Id == shopId, cancellationToken)
+            ?? throw new NotFoundException("Không tìm thấy shop.");
+        var owner = await ValidateSellerOwnerAsync(newOwnerId, cancellationToken);
+        var previousOwnerId = shop.OwnerId;
+        if (previousOwnerId == owner.Id)
+        {
+            return;
+        }
+
+        var previousStatus = shop.Status;
+        shop.OwnerId = owner.Id;
+        shop.UpdatedAt = DateTime.UtcNow;
+
+        // Same invariant as UpdateForAdminAsync: cascade + period + shop row commit together or not at all.
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await _ownershipTransfer.TransferAsync(shop.Id, previousOwnerId, owner.Id, cancellationToken);
+        await _operationalPeriods.OnShopUpdatedAsync(shop, previousStatus, previousOwnerId, cancellationToken);
+        await SaveChangesAllowingOpenPeriodRaceAsync(shop.Id, cancellationToken, transaction);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<AdminShopDto> UpdateForAdminAsync(Guid shopId, UpdateAdminShopDto dto, CancellationToken cancellationToken = default)
     {
         var shop = await _context.Shops

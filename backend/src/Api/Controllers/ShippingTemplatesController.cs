@@ -40,7 +40,7 @@ public class ShippingTemplatesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<ShippingTemplateDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<ShippingTemplateDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        var result = await _service.GetAllAsync(User.GetUserId(), cancellationToken);
+        var result = await _service.GetAllAsync(User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<List<ShippingTemplateDto>>.Ok(result));
     }
 
@@ -52,7 +52,7 @@ public class ShippingTemplatesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ShippingTemplateDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<ShippingTemplateDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _service.GetByIdAsync(User.GetUserId(), id, cancellationToken);
+        var result = await _service.GetByIdAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<ShippingTemplateDto>.Ok(result));
     }
 
@@ -67,7 +67,7 @@ public class ShippingTemplatesController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _service.CreateAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _service.CreateAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<ShippingTemplateDto>.Ok(result, "Tạo shipping template thành công."));
     }
 
@@ -83,7 +83,7 @@ public class ShippingTemplatesController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _updateValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _service.UpdateAsync(User.GetUserId(), id, request, cancellationToken);
+        var result = await _service.UpdateAsync(User.GetOwnerId(), id, request, cancellationToken);
         return Ok(ApiResponse<ShippingTemplateDto>.Ok(result, "Cập nhật shipping template thành công."));
     }
 
@@ -95,7 +95,7 @@ public class ShippingTemplatesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _service.DeleteAsync(User.GetUserId(), id, cancellationToken);
+        await _service.DeleteAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null, "Xóa shipping template thành công."));
     }
 }

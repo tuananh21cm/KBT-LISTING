@@ -79,7 +79,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await _orderSyncService.ListShippingServicesAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             platform,
             refresh,
             cancellationToken);
@@ -143,7 +143,7 @@ public class OrdersController : ControllerBase
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
         var result = await _sheinDetailSweep.RunForOrderAsync(
-            id, User.GetUserId(), cancellationToken);
+            id, User.GetOwnerId(), cancellationToken);
 
         return Ok(ApiResponse<SheinOrderSyncTrackResult>.Ok(result, result.Summary));
     }
@@ -176,7 +176,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateCostAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateCostAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(result, "Đã cập nhật phí đơn hàng."));
     }
 
@@ -195,7 +195,7 @@ public class OrdersController : ControllerBase
         var result = await _orderSyncService.UpdateMilestonesAsync(
             id,
             request,
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(result, "Đã cập nhật mốc fulfil."));
     }
@@ -212,7 +212,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateSettlementAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateSettlementAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(
             result,
             request.IsSettlementPaid ? "Đã đánh dấu thanh toán." : "Đã đánh dấu chưa thanh toán."));
@@ -230,7 +230,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateUspsProcessedAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateUspsProcessedAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(
             result,
             request.IsUspsProcessed ? "Đã đánh dấu xử lý USPS." : "Đã bỏ đánh dấu xử lý USPS."));
@@ -250,8 +250,8 @@ public class OrdersController : ControllerBase
         var result = await _uspsScanPush.PushAsync(
             request.OrderIds,
             request.Notes,
-            User.GetUserId(),
-            ownerUserId: User.GetUserId(),
+            User.GetOwnerId(),
+            ownerUserId: User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<UspsScanPushResultDto>.Ok(result, SummarizeUspsScanPush(result)));
     }
@@ -268,7 +268,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateThankCardProcessedAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateThankCardProcessedAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(
             result,
             request.IsThankCardProcessed ? "Đã đánh dấu mua ThankCard." : "Đã bỏ đánh dấu mua ThankCard."));
@@ -286,7 +286,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateRefundProcessedAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateRefundProcessedAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(
             result,
             request.IsRefundProcessed ? "Đã đánh dấu xử lý Refund." : "Đã bỏ đánh dấu xử lý Refund."));
@@ -320,7 +320,7 @@ public class OrdersController : ControllerBase
         CancellationToken cancellationToken)
     {
         await RequireOwnedOrderAsync(id, cancellationToken);
-        var result = await _orderSyncService.UpdateMessageAsync(id, request, User.GetUserId(), cancellationToken);
+        var result = await _orderSyncService.UpdateMessageAsync(id, request, User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<OrderDetailDto>.Ok(result, "Đã cập nhật thông báo đơn hàng."));
     }
 
@@ -334,8 +334,8 @@ public class OrdersController : ControllerBase
     public ActionResult<ApiResponse<OrderSyncJobStatusDto>> Sync([FromBody] OrderSyncRequest? request)
     {
         var body = request ?? new OrderSyncRequest();
-        body.OwnerUserId = User.GetUserId();
-        var job = _orderSyncJobRunner.Start(body, User.GetUserId());
+        body.OwnerUserId = User.GetOwnerId();
+        var job = _orderSyncJobRunner.Start(body, User.GetOwnerId());
         return Accepted(ApiResponse<OrderSyncJobStatusDto>.Ok(job, "Đã bắt đầu đồng bộ đơn hàng."));
     }
 
@@ -354,7 +354,7 @@ public class OrdersController : ControllerBase
                 "Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
         }
 
-        if (_orderSyncJobRunner.GetStartedByUserId(jobId) != User.GetUserId())
+        if (_orderSyncJobRunner.GetStartedByUserId(jobId) != User.GetOwnerId())
         {
             return NotFound(ApiResponse<OrderSyncJobStatusDto>.Fail(
                 "Không tìm thấy phiên đồng bộ (có thể đã hết hạn)."));
@@ -365,13 +365,13 @@ public class OrdersController : ControllerBase
 
     private void ScopeListToCurrentUser(OrderListQuery query)
     {
-        query.OwnerUserId = User.GetUserId();
+        query.OwnerUserId = User.GetOwnerId();
     }
 
     private async Task<OrderDetailDto> RequireOwnedOrderAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await _orderSyncService.GetByIdAsync(id, cancellationToken);
-        if (result.OwnerId != User.GetUserId())
+        if (result.OwnerId != User.GetOwnerId())
         {
             throw new NotFoundException("Không tìm thấy đơn hàng.");
         }

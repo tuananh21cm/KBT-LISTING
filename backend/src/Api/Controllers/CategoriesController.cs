@@ -103,7 +103,7 @@ public class CategoriesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await _categoryService.RecommendCategoryAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             request,
             cancellationToken);
         return Ok(ApiResponse<RecommendCategoryResultDto>.Ok(result, "Đã gợi ý category từ AI."));

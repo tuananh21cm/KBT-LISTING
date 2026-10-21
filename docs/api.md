@@ -77,6 +77,9 @@ Login trả `{"message":"Đã xảy ra lỗi hệ thống."}` (HTTP 500): thư�
 
 ## Auth Endpoints
 
+> **Tổ (team scope):** JWT có claim `owner` = `ApplicationUser.TeamOwnerId ?? Id`. Mọi controller seller-scoped (`/shops`, `/orders`, `/listings`, `/fourseller`, cookie 4Seller…) lọc theo `User.GetOwnerId()` (claim `owner`), còn `change-password`/`theme` dùng `User.GetUserId()` (claim `uid`). Thành viên tổ đăng nhập bằng tài khoản riêng nhưng thấy đúng dữ liệu của tài khoản tổ; `/auth/me` trả `teamOwnerUserName` và trạng thái cookie 4Seller của tài khoản tổ. Đổi tổ/khoá user → security stamp đổi → token cũ bị thu hồi.
+
+
 | Method | Route | Auth | Description |
 |--------|-------|------|-------------|
 | POST | `/auth/login` | No | Đăng nhập (chặn `IsActive=false`; sai mật khẩu 5 lần → khóa 15 phút, 401 riêng «tạm khóa») |
@@ -1412,6 +1415,19 @@ Cookie 4Seller **không** còn trong Settings — lưu per-user trên `AspNetUse
 - **Phát hiện chặn / lỗi mạng:** HTTP **567** → cooldown (`fourseller.proxy.cooldown_minutes`) + `FourSellerBlockedException` → Check login `blocked:true`. Proxy connect fail → cooldown (log reason `567` / `connect` / `407`) → thử scheme đối (http↔https) nếu chưa ghi scheme tường minh; seller sticky → `FourSellerUnavailableException` (không gọi thẳng); seller không sticky → retry 1 lần không proxy. **KHÔNG** đánh cookie `expired` khi blocked / unverified.
 - **Phân loại is-login:** `FourSellerSessionProbe` — `LoggedIn` (`code:0`+`data:true`); `Expired` chỉ khi `code:0` và `data` false/null (confirm probe lần 2 trước khi latch); mọi thứ khác (`non-2xx`, non-JSON, `code≠0`, timeout) → `Unverified` + `FourSellerUnavailableException` / response `unverified:true`. Cache session process-wide (`IFourSellerSessionCache`, TTL `fourseller.session.validate_ttl_minutes`, mặc định 15p) giảm burst is-login từ DI scope song song.
 - **Cấu hình:** proxy riêng từng seller ở trang Người dùng (`fourSellerProxy`); pool dự phòng + toggle + cooldown + TTL is-login ở Settings nhóm **4Seller Proxy**. Settings được cache ~30s trong manager.
+
+## Admin KBT CRM Endpoints
+
+Đồng bộ tổ / user / shop từ KBT CRM (`GET {kbtcrm.base_url}/agent/org`, header `x-agent-secret`), thay cho import Excel. Cấu hình ở Settings nhóm **Đồng bộ CRM (kbtcrm)**: `kbtcrm.sync.enabled`, `kbtcrm.sync.interval_minutes`, `kbtcrm.base_url` (prod bắt buộc `/api-proxy`), `kbtcrm.agent_secret`. Job nền `KbtCrmOrgSyncBackgroundService` chạy theo chu kỳ khi bật.
+
+| Method | Endpoint | Permission | Mô tả |
+|---|---|---|---|
+| POST | `/admin/kbtcrm/sync` | `admin.shops.manage` | Kéo `/agent/org` ngay. Trả `KbtCrmSyncResultDto`: `crmGroups/crmUsers/crmShops`, `usersCreated/usersUpdated/usersDeactivated`, `shopsCreated/shopsUpdated/ownersTransferred`, `skipped[]` (lý do bỏ qua), `finishedAt`. 400 khi thiếu base_url/secret. |
+
+Quy tắc map:
+- User theo `username` (lowercase). Tài khoản tổ (`tai_khoan_to`) → role Seller, `TeamOwnerId` null, là **chủ dữ liệu** của tổ. Thành viên `vai_tro=seller` → role Seller, `TeamOwnerId` = tài khoản tổ. `con_lam=false` → `IsActive=false` + thu hồi token. Vai trò khác (admin/sub-admin/fulfill/designer) bỏ qua; user có role Admin bên này không bị CRM sửa.
+- Mật khẩu tài khoản tạo mới: `<username>@Kbt2026` (CRM không chia sẻ hash). Email thiếu → `<username>@kbtcrm.local`.
+- Shop theo `shop_code` (TikTok, upper-case) ↔ `Shop.ShopCode`. Tạo mới với Platform TikTok, Region US, Status Active, `Name` = `shop_name` (fallback `ten`), `ProfileName` = `ten`. Chủ shop = tài khoản tổ của `assignee`, fallback `quan_ly[]`. Đổi tổ → `IShopService.TransferOwnerAsync` (cascade đơn/listing + kỳ vận hành, một transaction). Shop local không có trong CRM giữ nguyên. Platform ≠ tiktok bỏ qua. `shop_status` là text tự do của TikTok, không enum.
 
 ## Admin 4Seller Endpoints
 

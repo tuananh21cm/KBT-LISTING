@@ -478,6 +478,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
                 .HasMaxLength(64);
             entity.HasIndex(u => u.FulfilPinHash).IsUnique();
             entity.HasIndex(u => u.UserName).IsUnique();
+            entity.HasIndex(u => u.TeamOwnerId);
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(u => u.TeamOwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<ApplicationRole>(entity =>

@@ -12,6 +12,7 @@ import {
   useFourSellerAuthRedirect,
   useFourSellerCheckConnection,
   useFourSellerSyncShops,
+  useKbtCrmSync,
 } from '../../hooks/useFourSeller';
 
 function useAdminFourSellerDeps(): FourSellerDeps {
@@ -24,6 +25,7 @@ function useAdminFourSellerDeps(): FourSellerDeps {
     useAuthRedirect: useFourSellerAuthRedirect,
     useCheckConnection: useFourSellerCheckConnection,
     useSyncShops: useFourSellerSyncShops,
+    useSyncFromCrm: useKbtCrmSync,
     hasPermission,
   };
 }

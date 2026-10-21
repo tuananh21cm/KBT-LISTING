@@ -114,7 +114,7 @@ public class ShopsController : ControllerBase
     {
         var items = await _shopService.GetAutoPublishSchedulerStatusAsync(
             ids,
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<ShopAutoPublishSchedulerStatusBatchDto>.Ok(new ShopAutoPublishSchedulerStatusBatchDto
         {
@@ -130,7 +130,7 @@ public class ShopsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<ShopDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<ShopDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        var result = await _shopService.GetAllAsync(User.GetUserId(), cancellationToken);
+        var result = await _shopService.GetAllAsync(User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<List<ShopDto>>.Ok(result));
     }
 
@@ -143,7 +143,7 @@ public class ShopsController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<ScraperShopOptionDto>>>> GetScraperOptions(
         CancellationToken cancellationToken)
     {
-        var result = await _shopService.GetScraperOptionsAsync(User.GetUserId(), cancellationToken);
+        var result = await _shopService.GetScraperOptionsAsync(User.GetOwnerId(), cancellationToken);
         return Ok(ApiResponse<List<ScraperShopOptionDto>>.Ok(result));
     }
 
@@ -158,7 +158,7 @@ public class ShopsController : ControllerBase
         [FromQuery] ShopFinanceQuery query,
         CancellationToken cancellationToken)
     {
-        var result = await _shopFinance.GetForSellerAsync(User.GetUserId(), query, cancellationToken);
+        var result = await _shopFinance.GetForSellerAsync(User.GetOwnerId(), query, cancellationToken);
         return Ok(ApiResponse<ShopFinanceDto>.Ok(result));
     }
 
@@ -170,7 +170,7 @@ public class ShopsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<ShopDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<ShopDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _shopService.GetByIdAsync(User.GetUserId(), id, cancellationToken);
+        var result = await _shopService.GetByIdAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<ShopDto>.Ok(result));
     }
 
@@ -186,7 +186,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _updateValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _shopService.UpdateAsync(User.GetUserId(), id, request, cancellationToken);
+        var result = await _shopService.UpdateAsync(User.GetOwnerId(), id, request, cancellationToken);
         return Ok(ApiResponse<ShopDto>.Ok(result, "Cập nhật shop thành công."));
     }
 
@@ -204,7 +204,7 @@ public class ShopsController : ControllerBase
     {
         await _catalogValidator.ValidateAndThrowAsync(request, cancellationToken);
         var result = await _shopService.UpdateCatalogProfileAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             id,
             request,
             cancellationToken);
@@ -224,7 +224,7 @@ public class ShopsController : ControllerBase
     {
         await _autoPublishValidator.ValidateAndThrowAsync(request, cancellationToken);
         var result = await _shopService.UpdateAutoPublishAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             id,
             request,
             cancellationToken);
@@ -269,7 +269,7 @@ public class ShopsController : ControllerBase
     {
         await _syncTikTokProfileValidator.ValidateAndThrowAsync(request, cancellationToken);
         var result = await _shopService.SyncTikTokProfileAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             request,
             cancellationToken);
         return Ok(ApiResponse<ShopDto>.Ok(result, "Đã đồng bộ profile TikTok Shop."));
@@ -302,7 +302,7 @@ public class ShopsController : ControllerBase
         var id = !string.IsNullOrWhiteSpace(externalShopId)
             ? externalShopId.Trim()
             : (sellerId ?? string.Empty).Trim();
-        var result = await _tikTokPayoutSync.GetCursorAsync(User.GetUserId(), id, cancellationToken);
+        var result = await _tikTokPayoutSync.GetCursorAsync(User.GetOwnerId(), id, cancellationToken);
         return Ok(ApiResponse<TikTokPayoutSyncCursorDto>.Ok(result));
     }
 
@@ -317,7 +317,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _syncTikTokPayoutsValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _tikTokPayoutSync.SyncAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _tikTokPayoutSync.SyncAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<SyncTikTokPayoutsResultDto>.Ok(result, "Đã đồng bộ payout TikTok Shop."));
     }
 
@@ -349,7 +349,7 @@ public class ShopsController : ControllerBase
             ? externalShopId.Trim()
             : (sellerId ?? string.Empty).Trim();
         var result = await _productOpportunities.GetSyncContextAsync(
-            User.GetUserId(),
+            User.GetOwnerId(),
             id,
             cancellationToken);
         return Ok(ApiResponse<ProductOpportunitySyncContextDto>.Ok(result));
@@ -366,7 +366,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _syncProductOpportunitiesValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _productOpportunities.SyncAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _productOpportunities.SyncAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<SyncProductOpportunitiesResultDto>.Ok(result, "Đã đồng bộ Product opportunities."));
     }
 
@@ -382,7 +382,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _syncListingAnalyticsValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _listingAnalytics.SyncAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _listingAnalytics.SyncAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<SyncListingAnalyticsResultDto>.Ok(result, "Đã đồng bộ Listing analytics."));
     }
 
@@ -398,7 +398,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _syncHealthRecordsValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _healthRecords.SyncAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _healthRecords.SyncAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<SyncTikTokShopHealthRecordsResultDto>.Ok(result, "Đã đồng bộ Health Center."));
     }
 
@@ -414,7 +414,7 @@ public class ShopsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _syncShopScoresValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var result = await _shopScores.SyncAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _shopScores.SyncAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<SyncTikTokShopScoresResultDto>.Ok(result, "Đã đồng bộ điểm shop."));
     }
 
@@ -428,7 +428,7 @@ public class ShopsController : ControllerBase
         [FromBody] RecordTikTokShopSyncLogDto request,
         CancellationToken cancellationToken)
     {
-        var result = await _tikTokSyncLog.RecordAsync(User.GetUserId(), request, cancellationToken);
+        var result = await _tikTokSyncLog.RecordAsync(User.GetOwnerId(), request, cancellationToken);
         return Ok(ApiResponse<TikTokShopSyncLogDto>.Ok(result));
     }
 
@@ -442,7 +442,7 @@ public class ShopsController : ControllerBase
         [FromQuery] TikTokShopSyncLogQuery query,
         CancellationToken cancellationToken)
     {
-        var result = await _tikTokSyncLog.ListAsync(User.GetUserId(), query, cancellationToken);
+        var result = await _tikTokSyncLog.ListAsync(User.GetOwnerId(), query, cancellationToken);
         return Ok(ApiResponse<TikTokShopSyncLogPageDto>.Ok(result));
     }
 
@@ -458,7 +458,7 @@ public class ShopsController : ControllerBase
     {
         var result = await _whatToSellToday.AnalyzeAsync(
             id,
-            User.GetUserId(),
+            User.GetOwnerId(),
             cancellationToken);
         return Ok(ApiResponse<WhatToSellTodayDto>.Ok(result));
     }

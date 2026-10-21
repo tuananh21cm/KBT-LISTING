@@ -1,9 +1,11 @@
+import { createElement } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { message } from 'antd';
 import { Modal } from '@drop/ui';
 import { invalidateOrdersCaches } from '@drop/api-client';
 import { fourSellerApi } from '../services/fourSellerApi';
+import { adminKbtCrmApi } from '../services/adminKbtCrmApi';
 import type { FourSellerShopCheckResponse, FourSellerSyncResponse } from '../types/fourSeller';
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
@@ -155,3 +157,40 @@ export const useFourSellerShopList = (enabled = true) =>
     enabled,
     staleTime: 60_000,
   });
+
+/** Pull teams / users / shops from KBT CRM (replaces the Excel import). */
+export const useKbtCrmSync = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await adminKbtCrmApi.sync();
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Không đồng bộ được từ CRM.');
+      }
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['adminShops'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['sellers'] });
+      const skipped = response.data?.skipped ?? [];
+      if (skipped.length > 0) {
+        Modal.info({
+          title: response.message,
+          width: 640,
+          content: createElement(
+            'ul',
+            { style: { maxHeight: 360, overflow: 'auto', paddingLeft: 20 } },
+            skipped.map((line) => createElement('li', { key: line }, line)),
+          ),
+        });
+      } else {
+        message.success(response.message || 'Đã đồng bộ từ CRM.');
+      }
+    },
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, 'Không đồng bộ được từ CRM.'));
+    },
+  });
+};

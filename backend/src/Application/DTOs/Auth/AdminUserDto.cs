@@ -42,4 +42,7 @@ public class AdminUserDto
 
     /// <summary>Whether the user has a Fulfil extension PIN configured (write-only; value never returned).</summary>
     public bool HasFulfilPin { get; set; }
+
+    /// <summary>Username of the team account this user works under (CRM "tổ"); null = owns its own data.</summary>
+    public string? TeamOwnerUserName { get; set; }
 }

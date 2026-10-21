@@ -79,7 +79,7 @@ public class FulfilController : ControllerBase
         var result = await _fulfilService.GetTransactionsAsync(
             new FulfilTransactionQuery
             {
-                OwnerUserId = User.GetUserId(),
+                OwnerUserId = User.GetOwnerId(),
                 AccountId = accountId,
                 CardId = cardId,
                 SourceId = sourceId,
@@ -108,7 +108,7 @@ public class FulfilController : ControllerBase
         var result = await _fulfilService.GetTransactionByIdAsync(
             id,
             cancellationToken,
-            ownerUserId: User.GetUserId());
+            ownerUserId: User.GetOwnerId());
         return Ok(ApiResponse<FulfilTransactionDto>.Ok(result));
     }
 
@@ -121,7 +121,7 @@ public class FulfilController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _createTxnValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var userId = User.GetUserId();
+        var userId = User.GetOwnerId();
         var result = await _fulfilService.CreateTransactionAsync(
             request,
             userId,
@@ -140,7 +140,7 @@ public class FulfilController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _updateTxnValidator.ValidateAndThrowAsync(request, cancellationToken);
-        var userId = User.GetUserId();
+        var userId = User.GetOwnerId();
         var result = await _fulfilService.UpdateTransactionAsync(
             id,
             request,
@@ -161,7 +161,7 @@ public class FulfilController : ControllerBase
         await _fulfilService.DeleteTransactionAsync(
             id,
             cancellationToken,
-            ownerUserId: User.GetUserId(),
+            ownerUserId: User.GetOwnerId(),
             allowCostUpdateMutate: false);
         return Ok(ApiResponse<object>.Ok(null, "Xóa giao dịch thành công."));
     }

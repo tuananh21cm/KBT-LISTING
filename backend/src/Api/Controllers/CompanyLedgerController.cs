@@ -42,7 +42,7 @@ public class CompanyLedgerController : ControllerBase
         [FromQuery] CompanyLedgerQuery query,
         CancellationToken cancellationToken)
     {
-        query.SellerScopeUserId = User.GetUserId();
+        query.SellerScopeUserId = User.GetOwnerId();
         query.OwnerUserId = null;
         query.OwnerUnassigned = false;
         var result = await _service.ListAsync(query, cancellationToken);
